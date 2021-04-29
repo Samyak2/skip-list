@@ -1,5 +1,14 @@
-#include <iostream>
+/*
+skiplist container implemenation
+*/
+#include "skiplist.hpp"
 
-void examplefun() {
-  std::cout << "I'm in skiplists" << std::endl;
+template<typename T>
+skiplist<T>::skiplist() {
+
+}
+
+template<typename T>
+void skiplist<T>::insert(T value) {
+
 }

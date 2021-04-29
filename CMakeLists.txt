@@ -8,11 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # for editor support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(example1 examples/example1.cpp)
+add_executable(tester examples/tester.cpp)
 
-target_link_libraries(example1 PUBLIC skiplist)
+target_link_libraries(tester PUBLIC skiplist)
 
-target_include_directories(example1 PUBLIC
+target_include_directories(tester PUBLIC
                            "${PROJECT_BINARY_DIR}"
                            "${PROJECT_SOURCE_DIR}/skiplist"
                            )
