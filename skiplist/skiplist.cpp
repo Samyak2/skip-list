@@ -3,12 +3,10 @@ skiplist container implemenation
 */
 #include "skiplist.hpp"
 
-template<typename T>
-skiplist<T>::skiplist() {
-
-}
-
-template<typename T>
-void skiplist<T>::insert(T value) {
-
-}
+/*
+unfortunately, cpp doesn't like templates being defined across two files:
+http://www.cplusplus.com/forum/beginner/214364/
+if anyone finds a good way to split the interface and implementation across
+a header and a cpp file, please copy the code from the header file and paste it 
+here. :(
+*/
