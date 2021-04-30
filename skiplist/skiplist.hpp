@@ -22,7 +22,7 @@ struct SLNode {
     SLNode(T val_=T())
     : back(nullptr), next(nullptr), 
       up(nullptr), down(nullptr), val(val_) 
-    { this->count = 0; }
+    { this->count = 1; }
 };
 
 template<typename value_type>
@@ -36,7 +36,9 @@ class skiplist {
     // Iterator always points to a level 0 node
     // or a nullptr for end()
     class iterator {
+        public:
         SLNode<value_type> *node;
+        iterator(SLNode<value_type> *node_) : node(node_) {}
 
         bool operator==(const iterator &rhs) {return node==rhs.node;}
         bool operator!=(const iterator &rhs) {return !(*this==rhs);}
@@ -214,7 +216,29 @@ void skiplist<T>::erase(T value) {
 
 template<typename T>
 typename skiplist<T>::iterator skiplist<T>::find(T value) {
-    return end();
+    // Same algorithm as erase, but without erasing anything ;)
+    if(key.empty())
+        return end();
+    
+    // Start from top left
+    SLNode<T>* follow = key.back();
+    // Go on till level 0
+    while(follow->down) {
+        while(follow->next && follow->next->val < value)
+            follow = follow->next;
+        follow = follow->down;
+    }
+    // Traverse at level 0 till dest reached
+    while(follow->next && follow->next->val < value)
+        follow = follow->next;
+    
+    // If not exist, leave
+    if(!follow->next || follow->next->val != value)
+        return end();
+    
+    // This is the node for sure
+    follow = follow->next;
+    return iterator(follow);
 }
 // End of cpp file
 
