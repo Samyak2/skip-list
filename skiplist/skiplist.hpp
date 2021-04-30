@@ -79,7 +79,6 @@ class skiplist {
 =================== NOTE! THE PART BELOW IS FROM THE CPP FILE ==================
 ================================================================================
 */
-
 #include <cstdlib>
 
 template<typename T>
@@ -169,13 +168,55 @@ void skiplist<T>::insert(T value) {
 
 template<typename T>
 // Assume that the iterator is valid
+// But cannot assume element exists
 void skiplist<T>::erase(T value) {
+    if(key.empty())
+        return;
+    // Find value
+    // Decrement its counter
+    // If counter is zero, remove it
+    // If value does not exist, exit
+
+    // Start from top left
+    SLNode<T>* follow = key.back();
+    // Go on till level 0
+    while(follow->down) {
+        while(follow->next && follow->next->val < value)
+            follow = follow->next;
+        follow = follow->down;
+    }
+    // Traverse at level 0 till dest reached
+    while(follow->next && follow->next->val < value)
+        follow = follow->next;
+    
+    // If not exist, leave
+    if(!follow->next || follow->next->val != value)
+        return;
+    
+    // This is the node for sure
+    follow = follow->next;
+    follow->count--;
     --size_;
+
+    if(follow->count)
+        return;
+    // Remove it if count is zero
+    SLNode<T> *tmp;
+    while(follow) {
+        follow->back->next = follow->next;
+        if(follow->next)
+            follow->next->back = follow->back;
+        tmp = follow->up;
+        delete follow;
+        follow = tmp;
+    }
 }
 
 template<typename T>
 typename skiplist<T>::iterator skiplist<T>::find(T value) {
     return end();
 }
+// End of cpp file
 
 #endif
+// End of header file
