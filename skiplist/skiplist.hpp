@@ -22,7 +22,7 @@ struct SLNode {
     SLNode(T val_=T())
     : back(nullptr), next(nullptr), 
       up(nullptr), down(nullptr), val(val_) 
-    { this->count = 1; }
+    { count = 1; }
 };
 
 template<typename value_type>
@@ -37,6 +37,7 @@ class skiplist {
     // or a nullptr for end()
     class iterator {
         public:
+        // To increment or decrement this iterator, just change node
         SLNode<value_type> *node;
         iterator(SLNode<value_type> *node_) : node(node_) {}
 
@@ -144,6 +145,8 @@ void skiplist<T>::insert(T value) {
     SLNode<T> *node = new SLNode<T>(value), *keyd = key.back();
     node->next = follow->next;
     node->back = follow;
+    if(follow->next)
+        follow->next->back = node;
     follow->next = node;
     // Probabilistically add more levels
     while(rand()/RAND_MAX > 0.5) {
@@ -160,7 +163,7 @@ void skiplist<T>::insert(T value) {
             // add directly to the key
             keyd->up = new SLNode<T>();
             keyd->up->down = keyd;
-            keyd->up = keyd;
+            keyd = keyd->up;
             
             keyd->next = node;
             key.push_back(keyd);

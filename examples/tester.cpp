@@ -2,13 +2,17 @@
 #include <set>
 #include <skiplist.hpp>
 
+// standard
+using std::begin;
+using std::end;
+
 // io ops
 using std::cout;
 using std::endl;
 
 void foundit(skiplist<int> &s, int x) {
     skiplist<int>::iterator itr = s.find(x);
-    if(itr != s.end())
+    if(itr != end(s))
         cout << "Value: " << itr.node->val << " Count: " << itr.node->count << endl;
     else
         cout << "Not found: " << x << "\n";
@@ -25,22 +29,29 @@ int main() {
     std::multiset<int>::iterator it = iset.find(2);
     it = iset.find(7);
 
-    // skip list operations
+    cout << "The mulitset has:\n";
+    for(auto e: iset) {
+        cout << e << " ";
+    }
+    cout << "\n";
+
+    // skip list operations, must mirror the multiset operations
     skiplist<int> iskip;
     for(int i=0; i<10; i++)
         iskip.insert(i%5);
-    iskip.erase(1);
-    iskip.erase(1);
+    iskip.erase(0);
+    iskip.erase(0);
     iskip.erase(2);
     
-    foundit(iskip, 0);
-    foundit(iskip, 1);
     foundit(iskip, 2);
     foundit(iskip, 7);
 
-    iskip.insert(-1);
-    iskip.insert(99);
-    cout << "The first element is: " << iskip.begin().node->val << endl;
+    // need to make operator++, operator* for the iterator for this one
+    // cout << "The skiplist has:\n";
+    // for(auto e: iskip) {
+    //     cout << e << " ";
+    // }
+    // cout << "\n";
 
-    cout << "No runtime errors YAY!\n";
+    cout << "No runtime exceptions. YAY!\n";
 }
