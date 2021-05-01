@@ -98,14 +98,14 @@ void skiplist<T>::insert(T value) {
         key[0]->next = node;
         node->back = key[0];
         // Now insert some more, probabilistically
-        while(rand()/RAND_MAX > 0.5) {
+        while(double(rand())/RAND_MAX > 0.5) {
             node->up = new SLNode<T>(value);
             node->up->down = node;
             node = node->up;
 
             keyd->up = new SLNode<T>();
             keyd->up->down = keyd;
-            keyd->up = keyd;
+            keyd = keyd->up;
             
             keyd->next = node;
             key.push_back(keyd);
@@ -149,7 +149,7 @@ void skiplist<T>::insert(T value) {
         follow->next->back = node;
     follow->next = node;
     // Probabilistically add more levels
-    while(rand()/RAND_MAX > 0.5) {
+    while(double(rand())/RAND_MAX > 0.5) {
         node->up = new SLNode<T>(value);
         node->up->down = node;
         node = node->up;
