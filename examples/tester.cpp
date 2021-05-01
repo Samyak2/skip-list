@@ -37,8 +37,10 @@ int main() {
 
     // skip list operations, must mirror the multiset operations
     skiplist<int> iskip;
+    
     for(int i=0; i<10; i++)
         iskip.insert(i%5);
+    
     iskip.erase(0);
     iskip.erase(0);
     iskip.erase(2);
@@ -47,6 +49,7 @@ int main() {
     foundit(iskip, 7);
 
     // need to make operator++, operator* for the iterator for this one
+    // maybe instead of following the multiset method we print out (key, count)?
     // cout << "The skiplist has:\n";
     // for(auto e: iskip) {
     //     cout << e << " ";

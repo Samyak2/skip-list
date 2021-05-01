@@ -13,6 +13,7 @@ using std::vector;
 // for debugging
 #include <iostream>
 using std::cout;
+using std::endl;
 
 template<typename T>
 class skiplist;
@@ -54,9 +55,11 @@ class skiplist {
         bool operator!=(const iterator &rhs) {return !(*this==rhs);}
     };
     
-    skiplist() {};
+    skiplist() : size_(0) {};
     // TODO: Mem check with valgrind
     ~skiplist() {
+        // Terribly written destructor
+        // At every level, go on till nullptr and delete everything in its path
         SLNode<value_type> *tmp;
         for(auto level: key) {
             while(level) {
@@ -118,6 +121,7 @@ void skiplist<T>::insert(T value) {
             keyd = keyd->up;
             
             keyd->next = node;
+            node->back = keyd;
             key.push_back(keyd);
         }
         return;
@@ -171,11 +175,13 @@ void skiplist<T>::insert(T value) {
         }
         else {
             // add directly to the key
+            // mess around with the pointers
             keyd->up = new SLNode<T>();
             keyd->up->down = keyd;
             keyd = keyd->up;
             
             keyd->next = node;
+            node->back = keyd;
             key.push_back(keyd);
         }
     }
@@ -217,6 +223,7 @@ void skiplist<T>::erase(T value) {
         return;
     // Remove it if count is zero
     SLNode<T> *tmp;
+    // Go up all levels of that node and delete them
     while(follow) {
         follow->back->next = follow->next;
         if(follow->next)
