@@ -5,11 +5,20 @@ Only the skiplist container should be visible
 #ifndef SKIPLIST_H
 #define SKIPLIST_H
 #include <vector>
+#include <map>
+#include <iostream>
+#include <iomanip>
 using std::vector;
 
 // for debugging
 #include <iostream>
 using std::cout;
+
+template<typename T>
+class skiplist;
+
+template<typename T>
+void visualize(const skiplist<T>&);
 
 template<typename T>
 struct SLNode {
@@ -74,6 +83,7 @@ class skiplist {
     // one more version of erase is passing an iterator object
     void erase(value_type value);
     iterator find(value_type value);
+    friend void visualize<value_type>(const skiplist<value_type>&);
 };
 
 
@@ -98,7 +108,7 @@ void skiplist<T>::insert(T value) {
         key[0]->next = node;
         node->back = key[0];
         // Now insert some more, probabilistically
-        while(double(rand())/RAND_MAX > 0.5) {
+        while((double)rand()/RAND_MAX > 0.5) {
             node->up = new SLNode<T>(value);
             node->up->down = node;
             node = node->up;
@@ -149,7 +159,7 @@ void skiplist<T>::insert(T value) {
         follow->next->back = node;
     follow->next = node;
     // Probabilistically add more levels
-    while(double(rand())/RAND_MAX > 0.5) {
+    while((double)rand()/RAND_MAX > 0.5) {
         node->up = new SLNode<T>(value);
         node->up->down = node;
         node = node->up;
@@ -242,6 +252,53 @@ typename skiplist<T>::iterator skiplist<T>::find(T value) {
     // This is the node for sure
     follow = follow->next;
     return iterator(follow);
+}
+
+template<typename T>
+void visualize(const skiplist<T>& sl) {
+
+    // store mapping of node->index in a map
+    std::map<T, int> index_store{};
+    auto bottom_it = (*(sl.key.begin()))->next;
+    int cur_index = 0;
+    while (bottom_it) {
+        index_store[bottom_it->val] = cur_index;
+        cur_index++;
+        bottom_it = bottom_it->next;
+    }
+
+    auto level = sl.key.rbegin();
+    auto end = sl.key.rend();
+    while(level != end) {
+        // S denotes start of level, could be something different
+        std::cout << "S";
+
+        // to store previous element's index
+        // and current element's index
+        int index = -1, next_index;
+        // skip the first element - it is always 0
+        auto it = (*level)->next;
+        // iterate through the list at this level
+        while (it) {
+            next_index = index_store[it->val];
+
+            // filler to align it correctly
+            // when elements in between don't exist at this level
+            for (int i = 1; i < next_index - index; ++i) {
+                std::cout << "----";
+            }
+
+            // width of printed element is hardcoded to 3 for now
+            // the padding is filled with ""-"
+            std::cout << "-" << std::setfill('-') << std::setw(3) << it->val;
+            it = it->next;
+
+            index = next_index;
+        }
+        std::cout << std::endl;
+
+        level++;
+    }
 }
 // End of cpp file
 
