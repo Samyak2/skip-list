@@ -18,6 +18,15 @@ void foundit(skiplist<int> &s, int x) {
         cout << "Not found: " << x << "\n";
 }
 
+template<typename T>
+void display(T first, T last) {
+	while(first != last) {
+		cout << *first << "\t";
+		first++;
+	}
+	cout << "\n";
+}
+
 int main() {
     // set operations
     std::multiset<int> iset;
@@ -39,7 +48,11 @@ int main() {
     skiplist<int> iskip;
     
     for(int i=0; i<10; i++)
+	{
         iskip.insert(i%5);
+		cout << i%5 << "\t";
+	}
+	cout << "\n";
     
     iskip.erase(0);
     iskip.erase(0);
@@ -47,6 +60,8 @@ int main() {
     
     foundit(iskip, 2);
     foundit(iskip, 7);
+
+	display(iskip.cbegin(), iskip.cend());
 
     // need to make operator++, operator* for the iterator for this one
     // maybe instead of following the multiset method we print out (key, count)?

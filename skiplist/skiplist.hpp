@@ -46,13 +46,162 @@ class skiplist {
     // Iterator always points to a level 0 node
     // or a nullptr for end()
     class iterator {
+		private:
+		// since the skip list supports 
+		// having non-unique elemetns with
+		// the help of a count, to keep
+		// track of whether the iterator
+		// should actually move front or back
+		// given non-unique elements, we make
+		// use of these variables.
+		int node_count_;
+		// node_count_ref_ is an unchanging count
+		// of the current's node's count, used to
+		// keep track of when to move the iterator
+		// in the reverse direction. 
+		int node_count_ref_;
         public:
         // To increment or decrement this iterator, just change node
         SLNode<value_type> *node;
-        iterator(SLNode<value_type> *node_) : node(node_) {}
+        iterator(SLNode<value_type> *node_) : node(node_) {
+			if(node_) {
+				node_count_ = node_->count - 1;
+				node_count_ref_ = node_count_;
+			}
+		}
 
         bool operator==(const iterator &rhs) {return node==rhs.node;}
         bool operator!=(const iterator &rhs) {return !(*this==rhs);}
+		// de-reference operator
+		value_type& operator*() const {
+			return node->val;
+		}
+		// pre-increment operator
+		iterator& operator++() {
+			// only if 'all' the non-unique
+			// elements of the current node 
+			// have been 'traversed' in the
+			// forward direction, move the
+			// iterator forward. 
+			if(node_count_ != 0) {
+				--node_count_;
+				return *this;
+			}
+			node = node->next;
+			if(node) {
+				node_count_ = node->count - 1;
+				node_count_ref_ = node_count_;
+			}
+			return *this;
+		}
+		// post-increment opreator
+		iterator operator++(int) {
+			if(node_count_ != 0) {
+				--node_count_;
+				return *this;
+			}
+			iterator temp(node);
+			++*this;
+			return temp;
+		}
+		// pre-decrement operator
+		iterator& operator--() {
+			// only if 'all' the non-unique
+			// elements of the current node
+			// have been 'traversed' in the
+			// backward direction, move the
+			// iterator backward.
+			if(node_count_ + 1 < node_count_ref_) {
+				++node_count_;
+				return *this;
+			}
+			node = node->back;
+			if(node) {
+				node_count_ = node->count - 1;
+				node_count_ref_ = node_count_;
+			}
+			return *this;
+		}
+		// post-decrement operator
+		iterator operator--(int) {
+			if(node_count_ + 1 < node_count_ref_) {
+				++node_count_;
+				return *this;
+			}
+			iterator temp(node);
+			--*this;
+			return temp;
+		}
+    };
+
+    class constant_iterator {
+		private:
+        // see iterator for documentation about the below variables
+        // and their use in pre, post - increment, decrement.
+		int node_count_;
+		int node_count_ref_;
+        public:
+        // To increment or decrement this iterator, just change node
+        SLNode<value_type> *node;
+        constant_iterator(SLNode<value_type> *node_) : node(node_) {
+			if(node_) {
+				node_count_ = node_->count - 1;
+				node_count_ref_ = node_count_;
+			}
+		}
+
+        bool operator==(const constant_iterator &rhs) {return node==rhs.node;}
+        bool operator!=(const constant_iterator &rhs) {return !(*this==rhs);}
+		// de-reference operator
+		const value_type& operator*() const {
+			return node->val;
+		}
+		// pre-increment operator
+		const constant_iterator& operator++() {
+			if(node_count_ != 0) {
+				--node_count_;
+				return *this;
+			}
+			node = node->next;
+			if(node) {
+				node_count_ = node->count - 1;
+				node_count_ref_ = node_count_;
+			}
+			return *this;
+		}
+		// post-increment opreator
+		constant_iterator operator++(int) {
+			if(node_count_ != 0) {
+				--node_count_;
+				return *this;
+			}
+			constant_iterator temp(node);
+			++*this;
+			return temp;
+		}
+		// pre-decrement operator
+		const constant_iterator& operator--() {
+			if(node_count_ + 1 < node_count_ref_) {
+				++node_count_;
+				return *this;
+			}
+			node = node->back;
+			if(node) {
+				node_count_ = node->count - 1;
+				node_count_ref_ = node_count_;
+			}
+			return *this;
+		}
+		// post-decrement operator
+		constant_iterator operator--(int) {
+			if(node_count_ + 1 < node_count_ref_) {
+				++node_count_;
+				return *this;
+			}
+			constant_iterator temp(node);
+			--*this;
+			return temp;
+		}
     };
     
     skiplist() : size_(0) {};
@@ -78,6 +227,14 @@ class skiplist {
             return iterator(key[0]->next);
     }
     iterator end() {return iterator(nullptr);};
+
+    constant_iterator cbegin() {
+        if(key.empty())
+            return cend();
+        else
+            return constant_iterator(key[0]->next);
+    }
+    constant_iterator cend() {return constant_iterator(nullptr);};
 
     // specialized functions
     void insert(value_type value);
