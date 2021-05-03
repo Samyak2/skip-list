@@ -27,12 +27,13 @@ struct SLNode {
     SLNode *back, *next, *up, *down;
     // Value, should be templated
     T val;
-    // Count is integer only
+    // Count is integer only, will only be 0 for key nodes
     int count;
-    SLNode(T val_=T())
-    : back(nullptr), next(nullptr), 
-      up(nullptr), down(nullptr), val(val_) 
-    { count = 1; }
+    SLNode(T val_)
+    : back(nullptr), next(nullptr), up(nullptr), down(nullptr), val(val_), count(1) {}
+    // TODO: not nice, T must have default constructor, must figure a workaround
+    SLNode()
+    : back(nullptr), next(nullptr), up(nullptr), down(nullptr), count(0) {}
 };
 
 template<typename value_type>
@@ -40,7 +41,10 @@ class skiplist {
     private:
     // header nodes for all levels
     vector<SLNode<value_type>*> key;
+    // number of nodes in the skiplist (including non-unique ones)
     int size_;
+    // the last node at level 0
+    SLNode<value_type>* last;
 
     public:
     // Iterator always points to a level 0 node
@@ -48,32 +52,46 @@ class skiplist {
     class iterator {
 		private:
 		// since the skip list supports 
-		// having non-unique elemetns with
+		// having non-unique elements with
 		// the help of a count, to keep
 		// track of whether the iterator
 		// should actually move front or back
 		// given non-unique elements, we make
 		// use of these variables.
+
+        // node_count_ reprsents how many counts of the current node are
+        // remaining to be processed. node_count_ <= node_count_ref
 		int node_count_;
 		// node_count_ref_ is an unchanging count
 		// of the current's node's count, used to
 		// keep track of when to move the iterator
 		// in the reverse direction. 
 		int node_count_ref_;
+
+        // Is the iterator a reverse iterator?
+        // If true, the increment operations should move to node->back instead of node->next
+        // Count calculations, technically, should not be affected I think
+        bool reverse;
+        // One edge case we need to take care of is a reverse ++ on the first node
+        // Instead of moving to nullptr, it will move to the key vector
+        // This can be fixed by checking if the node we 
+        
         public:
         // To increment or decrement this iterator, just change node
         SLNode<value_type> *node;
-        iterator(SLNode<value_type> *node_) : node(node_) {
+        iterator(SLNode<value_type> *node_, bool reverse=false) : node(node_) {
 			if(node_) {
 				node_count_ = node_->count - 1;
 				node_count_ref_ = node_count_;
 			}
+            this->reverse = reverse;
 		}
 
         bool operator==(const iterator &rhs) {return node==rhs.node;}
         bool operator!=(const iterator &rhs) {return !(*this==rhs);}
 		// de-reference operator
-		value_type& operator*() const {
+        // RVALUE returned, else skiplist could break
+		value_type operator*() const {
 			return node->val;
 		}
 		// pre-increment operator
@@ -204,35 +222,33 @@ class skiplist {
 		}
     };
     
-    skiplist() : size_(0) {};
-    // TODO: Mem check with valgrind
+    skiplist() : size_(0), last(nullptr) {};
+    
+    // At every level, go on till nullptr and delete everything in its path
+    // then go on to the upper level
     ~skiplist() {
-        // Terribly written destructor
-        // At every level, go on till nullptr and delete everything in its path
         SLNode<value_type> *tmp;
-        for(auto level: key) {
+        for(auto level: key)
             while(level) {
                 tmp = level->next;
                 delete level;
                 level = tmp;
             }
-        }
     }
+
+    // acts like a getter
     int size() {return size_;};
     
-    iterator begin() {
-        if(key.empty())
-            return end();
-        else
-            return iterator(key[0]->next);
-    }
+    iterator begin() { return key.empty() ? end() : iterator(key[0]->next); }
     iterator end() {return iterator(nullptr);};
 
+    iterator rbegin() { return iterator(last, true); }
+    // sneak trick -> if the list is empty, last will be a nullptr
+    // thus returning rbegin() is okay. it also provides good symmetry wrt begin
+    iterator rend() {return key.empty() ? rbegin() : iterator(key[0], true);};
+
     constant_iterator cbegin() {
-        if(key.empty())
-            return cend();
-        else
-            return constant_iterator(key[0]->next);
+        return key.empty() ? cend() : constant_iterator(key[0]->next);
     }
     constant_iterator cend() {return constant_iterator(nullptr);};
 
@@ -267,6 +283,7 @@ void skiplist<T>::insert(T value) {
         key.push_back(keyd);
         key[0]->next = node;
         node->back = key[0];
+        last = node;
         // Now insert some more, probabilistically
         while((double)rand()/RAND_MAX > 0.5) {
             node->up = new SLNode<T>(value);
@@ -319,6 +336,9 @@ void skiplist<T>::insert(T value) {
     if(follow->next)
         follow->next->back = node;
     follow->next = node;
+    if(!node->next)
+        last = node;
+
     // Probabilistically add more levels
     while((double)rand()/RAND_MAX > 0.5) {
         node->up = new SLNode<T>(value);
@@ -379,6 +399,7 @@ void skiplist<T>::erase(T value) {
     if(follow->count)
         return;
     // Remove it if count is zero
+    last = follow->back;
     SLNode<T> *tmp;
     // Go up all levels of that node and delete them
     while(follow) {
@@ -389,6 +410,12 @@ void skiplist<T>::erase(T value) {
         delete follow;
         follow = tmp;
     }
+    // TODO : We have decided to leave the key structure unaltered
+    // This means even if a level is empty, it is still preserved.
+    // Need to discuss the benefits / costs of doing that
+
+    // I don't think leaving it unaltered makes the implmentation incorrect...
+    // but please check that once if you come across unexpected behaviour later on
 }
 
 template<typename T>
