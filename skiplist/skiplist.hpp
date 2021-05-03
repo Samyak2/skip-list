@@ -8,6 +8,7 @@ Only the skiplist container should be visible
 #include <map>
 #include <iomanip>
 #include <ctime>
+#include <random>
 using std::vector;
 
 // for debugging
@@ -45,6 +46,11 @@ private:
     int size_;
     // the last node at level 0
     SLNode<value_type>* last;
+
+    // stuff required for random number generation
+    // see constructor for description/reference
+    std::mt19937_64 mt_;
+    std::uniform_real_distribution<double> dist_;
 
 public:
     // Iterator always points to a level 0 node
@@ -252,7 +258,18 @@ public:
         }
     };
 
-    skiplist() : size_(0), last(nullptr) { srand(std::time(0)); }
+    skiplist() : size_(0), last(nullptr) {
+      // set up random number generator
+      // ref: https://stackoverflow.com/a/19666713/11199009
+      std::random_device rd;
+      // ref: https://www.cplusplus.com/reference/random/mt19937_64/
+      std::mt19937_64 mt(rd());
+      // usage of this is: dist(mt)
+      std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+      this->mt_ = mt;
+      this->dist_ = dist;
+    }
 
     // At every level, go on till nullptr and delete everything in its path
     // then go on to the upper level
@@ -346,7 +363,7 @@ void skiplist<T>::insert(T value) {
         node->back = key[0];
         last = node;
         // Now insert some more, probabilistically
-        while((double)rand()/RAND_MAX > 0.5) {
+        while(this->dist_(this->mt_) > 0.5) {
             node->up = new SLNode<T>(value);
             node->up->down = node;
             node = node->up;
@@ -401,7 +418,7 @@ void skiplist<T>::insert(T value) {
         last = node;
 
     // Probabilistically add more levels
-    while((double)rand()/RAND_MAX > 0.5) {
+    while(this->dist_(this->mt_) > 0.5) {
         node->up = new SLNode<T>(value);
         node->up->down = node;
         node = node->up;
