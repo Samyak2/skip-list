@@ -2,6 +2,7 @@
 #include <skiplist.hpp>
 #include <chrono>
 #include <random>
+using std::cerr;
 
 int main(int argc, char *argv[]) {
 
@@ -16,7 +17,7 @@ int main(int argc, char *argv[]) {
   if (argc > 2) {
     iterations = atoi(argv[2]);
   }
-  cout << "Size set to: " << iterations << endl;
+  cout << "Size set to: " << size << endl;
   cout << "Iterations set to: " << iterations << endl;
 
   skiplist<int> list;
@@ -30,6 +31,7 @@ int main(int argc, char *argv[]) {
 
   // benchmark find
   std::chrono::duration<double, std::micro> min_time(std::numeric_limits<double>::max());
+  std::chrono::duration<double, std::micro> total_time;
   for (int it = 0; it < iterations; ++it) {
     int to_find = distribution(generator);
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -37,17 +39,18 @@ int main(int argc, char *argv[]) {
     auto t2 = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double, std::micro> time_taken_us = t2 - t1;
-    // total_time += time_taken_us;
+    total_time += time_taken_us;
     if (time_taken_us < min_time) {
       min_time = time_taken_us;
     }
   }
-  // cout << "Total time: " << total_time.count() << " us" << std::endl;;
-  // cout << "Avg time:   " << total_time.count() / iterations << " us" << std::endl;
+  cerr << "FIND: Total time: " << total_time.count() << " us\n";
+  cerr << "FIND: Avg time:   " << total_time.count() / iterations << " us\n";
   cout << "Find: " << min_time.count() << " us" << std::endl;;
 
   // insert
   min_time = min_time.max();
+  total_time -= total_time; // weird way to set it to 0
   for (int it = 0; it < iterations; ++it) {
     int to_insert = distribution(generator);
 
@@ -56,17 +59,20 @@ int main(int argc, char *argv[]) {
     auto t2 = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double, std::micro> time_taken_us = t2 - t1;
-    // total_time += time_taken_us;
+    total_time += time_taken_us;
     if (time_taken_us < min_time) {
       min_time = time_taken_us;
     }
 
     list.erase(to_insert);
   }
-  cout << "Insert: " << min_time.count() << " us" << std::endl;;
+  cerr << "INSERT: Total time: " << total_time.count() << " us\n";
+  cerr << "INSERT: Avg time:   " << total_time.count() / iterations << " us\n";
+  cout << "Insert: " << min_time.count() << " us" << std::endl;
 
   // erase
   min_time = min_time.max();
+  total_time -= total_time; // weird way to set it to 0
   for (int it = 0; it < iterations; ++it) {
     int to_insert = distribution(generator);
 
@@ -77,10 +83,12 @@ int main(int argc, char *argv[]) {
     auto t2 = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double, std::micro> time_taken_us = t2 - t1;
-    // total_time += time_taken_us;
+    total_time += time_taken_us;
     if (time_taken_us < min_time) {
       min_time = time_taken_us;
     }
   }
+  cerr << "ERASE: Total time: " << total_time.count() << " us\n";
+  cerr << "ERASE: Avg time:   " << total_time.count() / iterations << " us\n";
   cout << "Erase: " << min_time.count() << " us" << std::endl;;
 }

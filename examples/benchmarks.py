@@ -6,19 +6,20 @@ import logging
 import os
 import re
 import math
+import sys
 
 import matplotlib.pyplot as plt
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-sizes = [1, 10, 50, 100, 500, 1000, 5000, 10_000, 50_000, 100_000]
-iterations = 10000
+sizes = [1, 10, 50, 100, 500, 1000, 5000, 10_000, 50_000, 100_000, 1_000_000]
+iterations = 1000
 
 curdir = os.getcwd()
 
-re_find_time = re.compile(r"Find: (\d+\.\d+) us")
-re_insert_time = re.compile(r"Insert: (\d+\.\d+) us")
-re_erase_time = re.compile(r"Erase: (\d+\.\d+) us")
+re_find_time = re.compile(r"Find: (\d+\.?\d*) us")
+re_insert_time = re.compile(r"Insert: (\d+\.?\d*) us")
+re_erase_time = re.compile(r"Erase: (\d+\.?\d*) us")
 
 find_times = []
 insert_times = []
@@ -40,7 +41,8 @@ for i in sizes:
     parse_time("insert", out, re_insert_time, insert_times)
     parse_time("erase", out, re_erase_time, erase_times)
 
-size_logs = sizes # list(map(math.log10, sizes))
+size_logs = sizes
+size_logs = list(map(math.log10, sizes))
 
 for list_, name in ((find_times, "Find"), (insert_times, "Insert"), (erase_times, "Erase")):
     plt.plot(size_logs, list_)
@@ -49,3 +51,5 @@ for list_, name in ((find_times, "Find"), (insert_times, "Insert"), (erase_times
     plt.ylabel("Runtime in microseconds")
     plt.savefig(f"{name}.png")
     plt.clf()
+
+print("\x1b[31mToo much info? Redirect stderr to devnull : 2>/dev/null\033[0m", file=sys.stderr)
