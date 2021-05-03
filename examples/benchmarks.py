@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 sizes = [1, 10, 50, 100, 500, 1000, 5000, 10_000, 50_000, 100_000, 1_000_000]
-iterations = 1000
+iterations = 100000
 
 curdir = os.getcwd()
 

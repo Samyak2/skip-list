@@ -34,6 +34,9 @@ int main(int argc, char *argv[]) {
   std::chrono::duration<double, std::micro> total_time;
   for (int it = 0; it < iterations; ++it) {
     int to_find = distribution(generator);
+
+    // apply cache magic :)
+    list.find(to_find);
     auto t1 = std::chrono::high_resolution_clock::now();
     list.find(to_find);
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -46,7 +49,7 @@ int main(int argc, char *argv[]) {
   }
   cerr << "FIND: Total time: " << total_time.count() << " us\n";
   cerr << "FIND: Avg time:   " << total_time.count() / iterations << " us\n";
-  cout << "Find: " << min_time.count() << " us" << std::endl;;
+  cout << "Find: " << total_time.count() / iterations << " us" << std::endl;;
 
   // insert
   min_time = min_time.max();
@@ -68,7 +71,7 @@ int main(int argc, char *argv[]) {
   }
   cerr << "INSERT: Total time: " << total_time.count() << " us\n";
   cerr << "INSERT: Avg time:   " << total_time.count() / iterations << " us\n";
-  cout << "Insert: " << min_time.count() << " us" << std::endl;
+  cout << "Insert: " << total_time.count() / iterations << " us" << std::endl;
 
   // erase
   min_time = min_time.max();
@@ -90,5 +93,5 @@ int main(int argc, char *argv[]) {
   }
   cerr << "ERASE: Total time: " << total_time.count() << " us\n";
   cerr << "ERASE: Avg time:   " << total_time.count() / iterations << " us\n";
-  cout << "Erase: " << min_time.count() << " us" << std::endl;;
+  cout << "Erase: " << total_time.count() / iterations << " us" << std::endl;;
 }
