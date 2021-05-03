@@ -6,8 +6,8 @@ Only the skiplist container should be visible
 #define SKIPLIST_H
 #include <vector>
 #include <map>
-#include <iostream>
 #include <iomanip>
+#include <ctime>
 using std::vector;
 
 // for debugging
@@ -84,7 +84,7 @@ public:
                 node_count_ = node_->count - 1;
                 node_count_ref_ = node_count_;
             }
-            this->reverse_ = reverse_;
+            this->reverse_ = reverse;
         }
 
         bool operator==(const iterator &rhs) {
@@ -252,7 +252,7 @@ public:
         }
     };
 
-    skiplist() : size_(0), last(nullptr) {};
+    skiplist() : size_(0), last(nullptr) { srand(std::time(0)); }
 
     // At every level, go on till nullptr and delete everything in its path
     // then go on to the upper level
@@ -269,7 +269,7 @@ public:
     // acts like a getter
     int size() {
         return size_;
-    };
+    }
 
     // forward iterator to begin
     iterator begin() {
@@ -304,7 +304,7 @@ public:
 
     // constant reverse iterator pointing to last element
     constant_iterator crbegin() {
-        cout << last->val;
+        // cout << last->val;
         return constant_iterator(last, true);
     }
 
