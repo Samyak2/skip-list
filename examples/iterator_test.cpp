@@ -5,16 +5,19 @@ template<typename T>
 void display(T first, T last) {
     while(first != last) {
         cout << *first << " ";
-        first++;
+        ++first;
     }
     cout << "\n";
 }
 
 int main() {
     skiplist<int> iskip;
-    for(int i=0; i<10; i++)
+    for(int i=0; i<21; i++)
     {
-        iskip.insert(i);
+        if(i%2)
+            iskip.insert(i%7);
+        else
+            iskip.insert(i+2);
     }
     visualize(iskip);
 
