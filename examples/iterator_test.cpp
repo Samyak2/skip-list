@@ -4,10 +4,10 @@
 template<typename T>
 void display(T first, T last) {
     while(first != last) {
-        cout << *first << " ";
+      std::cout << *first << " ";
         ++first;
     }
-    cout << "\n";
+    std::cout << "\n";
 }
 
 int main() {
@@ -21,15 +21,15 @@ int main() {
     }
     visualize(iskip);
 
-    cout << "Forward iterator :\n";
+    std::cout << "Forward iterator :\n";
     display(iskip.begin(), iskip.end());
 
-    cout << "Reverse iterator:\n";
+    std::cout << "Reverse iterator:\n";
     display(iskip.rbegin(), iskip.rend());
 
-    cout << "Forward constant iterator :\n";
+    std::cout << "Forward constant iterator :\n";
     display(iskip.cbegin(), iskip.cend());
 
-    cout << "Reverse constant iterator:\n";
+    std::cout << "Reverse constant iterator:\n";
     display(iskip.crbegin(), iskip.crend());
 }

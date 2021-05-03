@@ -6,15 +6,10 @@ Only the skiplist container should be visible
 #define SKIPLIST_H
 #include <vector>
 #include <map>
-#include <iomanip>
-#include <ctime>
 #include <random>
-using std::vector;
 
-// for debugging
+#include <iomanip>
 #include <iostream>
-using std::cout;
-using std::endl;
 
 template<typename T>
 class skiplist;
@@ -41,7 +36,7 @@ template<typename value_type>
 class skiplist {
 private:
     // header nodes for all levels
-    vector<SLNode<value_type>*> key;
+    std::vector<SLNode<value_type>*> key;
     // number of nodes in the skiplist (including non-unique ones)
     int size_;
     // the last node at level 0
@@ -383,7 +378,7 @@ void skiplist<T>::insert(T value) {
     // If not exists, create upper levels for that element
 
     // This is the prev nodes for all levels
-    vector<SLNode<T>*> history;
+    std::vector<SLNode<T>*> history;
     // Search always starts from the upper left node
     SLNode<T>* follow = key.back();
     // Go on till level 0
