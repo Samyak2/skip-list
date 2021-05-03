@@ -20,11 +20,11 @@ void foundit(skiplist<int> &s, int x) {
 
 template<typename T>
 void display(T first, T last) {
-	while(first != last) {
-		cout << *first << "\t";
-		first++;
-	}
-	cout << "\n";
+    while(first != last) {
+        cout << *first << "\t";
+        first++;
+    }
+    cout << "\n";
 }
 
 int main() {
@@ -46,31 +46,34 @@ int main() {
 
     // skip list operations, must mirror the multiset operations
     skiplist<int> iskip;
-    
+
     cout << "Inserting into the skip list:\n";
     for(int i=0; i<10; i++)
-	{
+    {
         iskip.insert(i%5);
-		cout << i%5 << " ";
-	}
-	cout << "\n";
-    
+        cout << i%5 << " ";
+    }
+    cout << "\n";
+
     iskip.erase(0);
     iskip.erase(0);
     iskip.erase(2);
-    
+
     foundit(iskip, 2);
     foundit(iskip, 7);
 
-	// display(iskip.cbegin(), iskip.cend());
+    display(iskip.rbegin(), iskip.rend());
 
     // need to make operator++, operator* for the iterator for this one
     // maybe instead of following the multiset method we print out (key, count)?
     cout << "The skiplist has:\n";
-    for(auto e: iskip) {
-        cout << e << " ";
-    }
+    //for(auto e: iskip) {
+    //    cout << e << " ";
+    //}
     cout << "\n";
+
+    cout << "The skiplist in reverse:\n";
+    //display(iskip.begin(), iskip.end());
 
     cout << "No runtime exceptions. YAY!\n";
 }
