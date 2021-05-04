@@ -47,7 +47,7 @@ size_logs = list(map(math.log10, sizes))
 for list_, name in ((find_times, "Find"), (insert_times, "Insert"), (erase_times, "Erase")):
     plt.plot(size_logs, list_)
     plt.title(name)
-    plt.xlabel("Size of list")
+    plt.xlabel("log10(Size of list)")
     plt.ylabel("Runtime in microseconds")
     plt.savefig(f"{name}.png")
     plt.clf()
