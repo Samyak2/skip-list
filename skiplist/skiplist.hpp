@@ -1,4 +1,4 @@
-/* 
+/*
 Skip list implementation
 Only the skiplist container should be visible
 */
@@ -6,14 +6,10 @@ Only the skiplist container should be visible
 #define SKIPLIST_H
 #include <vector>
 #include <map>
-#include <iostream>
-#include <iomanip>
-using std::vector;
+#include <random>
 
-// for debugging
+#include <iomanip>
 #include <iostream>
-using std::cout;
-using std::endl;
 
 template<typename T>
 class skiplist;
@@ -27,57 +23,307 @@ struct SLNode {
     SLNode *back, *next, *up, *down;
     // Value, should be templated
     T val;
-    // Count is integer only
+    // Count is integer only, will only be 0 for key nodes
     int count;
-    SLNode(T val_=T())
-    : back(nullptr), next(nullptr), 
-      up(nullptr), down(nullptr), val(val_) 
-    { count = 1; }
+    SLNode(T val_)
+        : back(nullptr), next(nullptr), up(nullptr), down(nullptr), val(val_), count(1) {}
+    // TODO: not nice, T must have default constructor, must figure a workaround
+    SLNode()
+        : back(nullptr), next(nullptr), up(nullptr), down(nullptr), count(0) {}
 };
 
 template<typename value_type>
 class skiplist {
-    private:
+private:
     // header nodes for all levels
-    vector<SLNode<value_type>*> key;
+    std::vector<SLNode<value_type>*> key;
+    // number of nodes in the skiplist (including non-unique ones)
     int size_;
+    // the last node at level 0
+    SLNode<value_type>* last;
 
-    public:
+    // stuff required for random number generation
+    // see constructor for description/reference
+    std::mt19937_64 mt_;
+    std::uniform_real_distribution<double> dist_;
+
+public:
     // Iterator always points to a level 0 node
     // or a nullptr for end()
     class iterator {
-        public:
+    private:
+        // since the skip list supports
+        // having non-unique elements with
+        // the help of a count, to keep
+        // track of whether the iterator
+        // should actually move front or back
+        // given non-unique elements, we make
+        // use of these variables.
+
+        // node_count_ reprsents how many counts of the current node are
+        // remaining to be processed. node_count_ <= node_count_ref
+        int node_count_;
+        // node_count_ref_ is an unchanging count
+        // of the current's node's count, used to
+        // keep track of when to move the iterator
+        // in the reverse direction.
+        int node_count_ref_;
+
+        // Is the iterator a reverse iterator?
+        // If true, the increment operations should move to node->back instead of node->next
+        // Count calculations, technically, should not be affected I think
+        bool reverse_;
+        // One edge case we need to take care of is a reverse ++ on the first node
+        // Instead of moving to nullptr, it will move to the key vector
+        // This can be fixed by checking if the node we
+
+    public:
         // To increment or decrement this iterator, just change node
         SLNode<value_type> *node;
-        iterator(SLNode<value_type> *node_) : node(node_) {}
+        iterator(SLNode<value_type> *node_, bool reverse=false) : node(node_) {
+            if(node_) {
+                node_count_ = node_->count - 1;
+                node_count_ref_ = node_count_;
+            }
+            this->reverse_ = reverse;
+        }
 
-        bool operator==(const iterator &rhs) {return node==rhs.node;}
-        bool operator!=(const iterator &rhs) {return !(*this==rhs);}
+        bool operator==(const iterator &rhs) {
+            return node==rhs.node;
+        }
+        bool operator!=(const iterator &rhs) {
+            return !(*this==rhs);
+        }
+        // de-reference operator
+        // RVALUE returned, else skiplist could break
+        value_type operator*() const {
+            return node->val;
+        }
+        // pre-increment operator
+        iterator& operator++() {
+            // only if 'all' the non-unique
+            // elements of the current node
+            // have been 'traversed' in the
+            // forward direction, move the
+            // iterator forward.
+            if(node_count_ != 0) {
+                --node_count_;
+                return *this;
+            }
+            if(reverse_) {
+                node = node->back;
+            }
+            else {
+                node = node->next;
+            }
+            if(node) {
+                node_count_ = node->count - 1;
+                node_count_ref_ = node_count_;
+            }
+            return *this;
+        }
+        // post-increment opreator
+        iterator operator++(int) {
+            if(node_count_ != 0) {
+                --node_count_;
+                return *this;
+            }
+            iterator temp(node);
+            ++*this;
+            return temp;
+        }
+        // pre-decrement operator
+        iterator& operator--() {
+            // only if 'all' the non-unique
+            // elements of the current node
+            // have been 'traversed' in the
+            // backward direction, move the
+            // iterator backward.
+            if(node_count_ + 1 < node_count_ref_) {
+                ++node_count_;
+                return *this;
+            }
+            if(reverse_) {
+                node = node->front;
+            }
+            else {
+                node = node->back;
+            }
+            if(node) {
+                node_count_ = node->count - 1;
+                node_count_ref_ = node_count_;
+            }
+            return *this;
+        }
+        // post-decrement operator
+        iterator operator--(int) {
+            if(node_count_ + 1 < node_count_ref_) {
+                ++node_count_;
+                return *this;
+            }
+            iterator temp(node);
+            --*this;
+            return temp;
+        }
     };
-    
-    skiplist() : size_(0) {};
-    // TODO: Mem check with valgrind
+
+    class constant_iterator {
+    private:
+        // see iterator for documentation about the below variables
+        // and their use in pre, post - increment, decrement.
+        int node_count_;
+        int node_count_ref_;
+        bool reverse_;
+    public:
+        // To increment or decrement this iterator, just change node
+        SLNode<value_type> *node;
+        constant_iterator(SLNode<value_type> *node_, bool reverse_=false) : node(node_) {
+            if(node_) {
+                node_count_ = node_->count - 1;
+                node_count_ref_ = node_count_;
+            }
+            this->reverse_ = reverse_;
+        }
+
+        bool operator==(const constant_iterator &rhs) {
+            return node==rhs.node;
+        }
+        bool operator!=(const constant_iterator &rhs) {
+            return !(*this==rhs);
+        }
+        // de-reference operator
+        const value_type& operator*() const {
+            return node->val;
+        }
+        // pre-increment operator
+        const constant_iterator& operator++() {
+            if(node_count_ != 0) {
+                --node_count_;
+                return *this;
+            }
+            if(reverse_) {
+                node = node->back;
+            }
+            else {
+                node = node->next;
+            }
+            if(node) {
+                node_count_ = node->count - 1;
+                node_count_ref_ = node_count_;
+            }
+            return *this;
+        }
+        // post-increment opreator
+        constant_iterator operator++(int) {
+            if(node_count_ != 0) {
+                --node_count_;
+                return *this;
+            }
+            constant_iterator temp(node);
+            ++*this;
+            return temp;
+        }
+        // pre-decrement operator
+        const constant_iterator& operator--() {
+            if(node_count_ + 1 < node_count_ref_) {
+                ++node_count_;
+                return *this;
+            }
+            if(reverse_) {
+                node = node->front;
+            }
+            else {
+                node = node->back;
+            }
+            if(node) {
+                node_count_ = node->count - 1;
+                node_count_ref_ = node_count_;
+            }
+            return *this;
+        }
+        // post-decrement operator
+        constant_iterator operator--(int) {
+            if(node_count_ + 1 < node_count_ref_) {
+                ++node_count_;
+                return *this;
+            }
+            constant_iterator temp(node);
+            --*this;
+            return temp;
+        }
+    };
+
+    skiplist() : size_(0), last(nullptr) {
+      // set up random number generator
+      // ref: https://stackoverflow.com/a/19666713/11199009
+      std::random_device rd;
+      // ref: https://www.cplusplus.com/reference/random/mt19937_64/
+      std::mt19937_64 mt(rd());
+      // usage of this is: dist(mt)
+      std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+      this->mt_ = mt;
+      this->dist_ = dist;
+    }
+
+    // At every level, go on till nullptr and delete everything in its path
+    // then go on to the upper level
     ~skiplist() {
-        // Terribly written destructor
-        // At every level, go on till nullptr and delete everything in its path
         SLNode<value_type> *tmp;
-        for(auto level: key) {
+        for(auto level: key)
             while(level) {
                 tmp = level->next;
                 delete level;
                 level = tmp;
             }
-        }
     }
-    int size() {return size_;};
-    
+
+    // acts like a getter
+    int size() {
+        return size_;
+    }
+
+    // forward iterator to begin
     iterator begin() {
-        if(key.empty())
-            return end();
-        else
-            return iterator(key[0]->next);
+        return key.empty() ? end() : iterator(key[0]->next);
     }
-    iterator end() {return iterator(nullptr);};
+
+    // forward iterator to one beyond last.
+    iterator end() {
+        return iterator(nullptr);
+    };
+
+    // reverse iterator pointing to last element
+    iterator rbegin() {
+        return iterator(last, true);
+    }
+
+    // sneak trick -> if the list is empty, last will be a nullptr
+    // thus returning rbegin() is okay. it also provides good symmetry wrt begin
+    iterator rend() {
+        return key.empty() ? rbegin() : iterator(key[0], true);
+    }
+
+    // constant forward iterator
+    constant_iterator cbegin() {
+        return key.empty() ? cend() : constant_iterator(key[0]->next);
+    }
+
+    // constant forward iterator pointing to one beyond the last node
+    constant_iterator cend() {
+        return constant_iterator(nullptr);
+    }
+
+    // constant reverse iterator pointing to last element
+    constant_iterator crbegin() {
+        // cout << last->val;
+        return constant_iterator(last, true);
+    }
+
+    // constant reverse iterator pointing to last one before the first node
+    constant_iterator crend() {
+        return key.empty() ? crbegin() : constant_iterator(key[0], true);
+    }
 
     // specialized functions
     void insert(value_type value);
@@ -110,8 +356,9 @@ void skiplist<T>::insert(T value) {
         key.push_back(keyd);
         key[0]->next = node;
         node->back = key[0];
+        last = node;
         // Now insert some more, probabilistically
-        while((double)rand()/RAND_MAX > 0.5) {
+        while(this->dist_(this->mt_) > 0.5) {
             node->up = new SLNode<T>(value);
             node->up->down = node;
             node = node->up;
@@ -119,7 +366,7 @@ void skiplist<T>::insert(T value) {
             keyd->up = new SLNode<T>();
             keyd->up->down = keyd;
             keyd = keyd->up;
-            
+
             keyd->next = node;
             node->back = keyd;
             key.push_back(keyd);
@@ -129,9 +376,9 @@ void skiplist<T>::insert(T value) {
     // Else
     // Find the correct position, insert
     // If not exists, create upper levels for that element
-    
+
     // This is the prev nodes for all levels
-    vector<SLNode<T>*> history;
+    std::vector<SLNode<T>*> history;
     // Search always starts from the upper left node
     SLNode<T>* follow = key.back();
     // Go on till level 0
@@ -144,7 +391,7 @@ void skiplist<T>::insert(T value) {
     // Traverse at level 0 till dest reached
     while(follow->next && follow->next->val < value)
         follow = follow->next;
-    
+
     // If node already exists, just increment its count
     if(follow->next && follow->next->val == value) {
         follow = follow->next;
@@ -162,8 +409,11 @@ void skiplist<T>::insert(T value) {
     if(follow->next)
         follow->next->back = node;
     follow->next = node;
+    if(!node->next)
+        last = node;
+
     // Probabilistically add more levels
-    while((double)rand()/RAND_MAX > 0.5) {
+    while(this->dist_(this->mt_) > 0.5) {
         node->up = new SLNode<T>(value);
         node->up->down = node;
         node = node->up;
@@ -179,7 +429,7 @@ void skiplist<T>::insert(T value) {
             keyd->up = new SLNode<T>();
             keyd->up->down = keyd;
             keyd = keyd->up;
-            
+
             keyd->next = node;
             node->back = keyd;
             key.push_back(keyd);
@@ -209,11 +459,11 @@ void skiplist<T>::erase(T value) {
     // Traverse at level 0 till dest reached
     while(follow->next && follow->next->val < value)
         follow = follow->next;
-    
+
     // If not exist, leave
     if(!follow->next || follow->next->val != value)
         return;
-    
+
     // This is the node for sure
     follow = follow->next;
     follow->count--;
@@ -222,6 +472,7 @@ void skiplist<T>::erase(T value) {
     if(follow->count)
         return;
     // Remove it if count is zero
+    last = follow->back;
     SLNode<T> *tmp;
     // Go up all levels of that node and delete them
     while(follow) {
@@ -232,6 +483,12 @@ void skiplist<T>::erase(T value) {
         delete follow;
         follow = tmp;
     }
+    // TODO : We have decided to leave the key structure unaltered
+    // This means even if a level is empty, it is still preserved.
+    // Need to discuss the benefits / costs of doing that
+
+    // I don't think leaving it unaltered makes the implmentation incorrect...
+    // but please check that once if you come across unexpected behaviour later on
 }
 
 template<typename T>
@@ -239,7 +496,7 @@ typename skiplist<T>::iterator skiplist<T>::find(T value) {
     // Same algorithm as erase, but without erasing anything ;)
     if(key.empty())
         return end();
-    
+
     // Start from top left
     SLNode<T>* follow = key.back();
     // Go on till level 0
@@ -251,11 +508,11 @@ typename skiplist<T>::iterator skiplist<T>::find(T value) {
     // Traverse at level 0 till dest reached
     while(follow->next && follow->next->val < value)
         follow = follow->next;
-    
+
     // If not exist, leave
     if(!follow->next || follow->next->val != value)
         return end();
-    
+
     // This is the node for sure
     follow = follow->next;
     return iterator(follow);
