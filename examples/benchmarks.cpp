@@ -2,7 +2,6 @@
 #include <skiplist.hpp>
 #include <chrono>
 #include <random>
-using std::cerr;
 
 int main(int argc, char *argv[]) {
 
@@ -47,8 +46,8 @@ int main(int argc, char *argv[]) {
       min_time = time_taken_us;
     }
   }
-  cerr << "FIND: Total time: " << total_time.count() << " us\n";
-  cerr << "FIND: Avg time:   " << total_time.count() / iterations << " us\n";
+  std::cerr << "FIND: Total time: " << total_time.count() << " us\n";
+  std::cerr << "FIND: Avg time:   " << total_time.count() / iterations << " us\n";
   std::cout << "Find: " << total_time.count() / iterations << " us" << std::endl;;
 
   // insert
@@ -69,8 +68,8 @@ int main(int argc, char *argv[]) {
 
     list.erase(to_insert);
   }
-  cerr << "INSERT: Total time: " << total_time.count() << " us\n";
-  cerr << "INSERT: Avg time:   " << total_time.count() / iterations << " us\n";
+  std::cerr << "INSERT: Total time: " << total_time.count() << " us\n";
+  std::cerr << "INSERT: Avg time:   " << total_time.count() / iterations << " us\n";
   std::cout << "Insert: " << total_time.count() / iterations << " us" << std::endl;
 
   // erase
@@ -91,7 +90,7 @@ int main(int argc, char *argv[]) {
       min_time = time_taken_us;
     }
   }
-  cerr << "ERASE: Total time: " << total_time.count() << " us\n";
-  cerr << "ERASE: Avg time:   " << total_time.count() / iterations << " us\n";
+  std::cerr << "ERASE: Total time: " << total_time.count() << " us\n";
+  std::cerr << "ERASE: Avg time:   " << total_time.count() / iterations << " us\n";
   std::cout << "Erase: " << total_time.count() / iterations << " us" << std::endl;;
 }
