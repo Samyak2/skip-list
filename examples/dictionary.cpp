@@ -32,10 +32,10 @@ std::ostream &operator<<(std::ostream &out, const DictKey &o) {
 void foundit(skiplist<DictKey> &s, DictKey x) {
   skiplist<DictKey>::iterator itr = s.find(x);
   if (itr != std::end(s))
-    cout << "Value: " << itr.node->val << " Count: " << itr.node->count
+    std::cout << "Value: " << itr.node->val << " Count: " << itr.node->count
          << std::endl;
   else
-    cout << "Not found: " << x << "\n";
+    std::cout << "Not found: " << x << "\n";
 }
 
 int main() {
