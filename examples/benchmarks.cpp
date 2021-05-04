@@ -17,8 +17,8 @@ int main(int argc, char *argv[]) {
   if (argc > 2) {
     iterations = atoi(argv[2]);
   }
-  cout << "Size set to: " << size << endl;
-  cout << "Iterations set to: " << iterations << endl;
+  std::cout << "Size set to: " << size << std::endl;
+  std::cout << "Iterations set to: " << iterations << std::endl;
 
   skiplist<int> list;
   for (int i = 0; i < size; ++i) {
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   }
   cerr << "FIND: Total time: " << total_time.count() << " us\n";
   cerr << "FIND: Avg time:   " << total_time.count() / iterations << " us\n";
-  cout << "Find: " << total_time.count() / iterations << " us" << std::endl;;
+  std::cout << "Find: " << total_time.count() / iterations << " us" << std::endl;;
 
   // insert
   min_time = min_time.max();
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   }
   cerr << "INSERT: Total time: " << total_time.count() << " us\n";
   cerr << "INSERT: Avg time:   " << total_time.count() / iterations << " us\n";
-  cout << "Insert: " << total_time.count() / iterations << " us" << std::endl;
+  std::cout << "Insert: " << total_time.count() / iterations << " us" << std::endl;
 
   // erase
   min_time = min_time.max();
@@ -93,5 +93,5 @@ int main(int argc, char *argv[]) {
   }
   cerr << "ERASE: Total time: " << total_time.count() << " us\n";
   cerr << "ERASE: Avg time:   " << total_time.count() / iterations << " us\n";
-  cout << "Erase: " << total_time.count() / iterations << " us" << std::endl;;
+  std::cout << "Erase: " << total_time.count() / iterations << " us" << std::endl;;
 }
