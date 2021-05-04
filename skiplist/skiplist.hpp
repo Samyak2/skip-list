@@ -564,6 +564,10 @@ typename skiplist<T, X>::iterator skiplist<T, X>::find(T value) {
 
 template<typename T>
 void visualize(const skiplist<T>& sl) {
+    if (sl.key.empty()) {
+      std::cout << "EMPTY SKIPLIST" << std::endl;
+      return;
+    }
 
     // store mapping of node->index in a map
     std::map<T, int> index_store{};
