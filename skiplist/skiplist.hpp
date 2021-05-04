@@ -7,11 +7,15 @@ Only the skiplist container should be visible
 #include <vector>
 #include <map>
 #include <random>
+#include <iterator>
 
 #include <iomanip>
 #include <iostream>
 
-template<typename T>
+template<
+    typename value_type,
+    typename compare_t = std::less<value_type>
+>
 class skiplist;
 
 template<typename T>
@@ -32,7 +36,10 @@ struct SLNode {
         : back(nullptr), next(nullptr), up(nullptr), down(nullptr), count(0) {}
 };
 
-template<typename value_type>
+template<
+    typename value_type,
+    typename compare_t
+>
 class skiplist {
 private:
     // header nodes for all levels
@@ -47,10 +54,13 @@ private:
     std::mt19937_64 mt_;
     std::uniform_real_distribution<double> dist_;
 
+    // template objects, since compare is supposed to be a functor
+    compare_t compare;
+
 public:
     // Iterator always points to a level 0 node
     // or a nullptr for end()
-    class iterator {
+    class iterator : std::bidirectional_iterator_tag {
     private:
         // since the skip list supports
         // having non-unique elements with
@@ -75,7 +85,7 @@ public:
         bool reverse_;
         // One edge case we need to take care of is a reverse ++ on the first node
         // Instead of moving to nullptr, it will move to the key vector
-        // This can be fixed by checking if the node we
+        // This is currently handled by rend and crend
 
     public:
         // To increment or decrement this iterator, just change node
@@ -331,6 +341,7 @@ public:
     // this version finds the value and deletes the node if it exists
     // one more version of erase is passing an iterator object
     void erase(value_type value);
+    iterator erase(iterator it);
     iterator find(value_type value);
     friend void visualize<value_type>(const skiplist<value_type>&);
 };
@@ -341,12 +352,17 @@ public:
 =================== NOTE! THE PART BELOW IS FROM THE CPP FILE ==================
 ================================================================================
 */
-#include <cstdlib>
 
-template<typename T>
+// utility function to check equality, am lazy
+template<typename T, typename op>
+bool _420_is_equal(T &a, T& b, op less_than) {
+    return !less_than(a, b) && !less_than(b, a);
+}
+
+template<typename T, typename X>
 // Inserting same value just increments count
 // Insertion always starts at level 0
-void skiplist<T>::insert(T value) {
+void skiplist<T, X>::insert(T value) {
     ++size_;
 
     // If entire container empty
@@ -383,17 +399,17 @@ void skiplist<T>::insert(T value) {
     SLNode<T>* follow = key.back();
     // Go on till level 0
     while(follow->down) {
-        while(follow->next && follow->next->val < value)
+        while(follow->next && compare(follow->next->val,value))
             follow = follow->next;
         history.push_back(follow);
         follow = follow->down;
     }
     // Traverse at level 0 till dest reached
-    while(follow->next && follow->next->val < value)
+    while(follow->next && compare(follow->next->val,value))
         follow = follow->next;
 
     // If node already exists, just increment its count
-    if(follow->next && follow->next->val == value) {
+    if(follow->next && _420_is_equal(follow->next->val, value, compare)) {
         follow = follow->next;
         while(follow) {
             follow->count++;
@@ -437,10 +453,9 @@ void skiplist<T>::insert(T value) {
     }
 }
 
-template<typename T>
-// Assume that the iterator is valid
-// But cannot assume element exists
-void skiplist<T>::erase(T value) {
+template<typename T, typename X>
+// Cannot assume element exists
+void skiplist<T, X>::erase(T value) {
     if(key.empty())
         return;
     // Find value
@@ -452,16 +467,16 @@ void skiplist<T>::erase(T value) {
     SLNode<T>* follow = key.back();
     // Go on till level 0
     while(follow->down) {
-        while(follow->next && follow->next->val < value)
+        while(follow->next && compare(follow->next->val, value))
             follow = follow->next;
         follow = follow->down;
     }
     // Traverse at level 0 till dest reached
-    while(follow->next && follow->next->val < value)
+    while(follow->next && compare(follow->next->val, value))
         follow = follow->next;
 
     // If not exist, leave
-    if(!follow->next || follow->next->val != value)
+    if(!follow->next || !_420_is_equal(follow->next->val, value, compare))
         return;
 
     // This is the node for sure
@@ -491,8 +506,37 @@ void skiplist<T>::erase(T value) {
     // but please check that once if you come across unexpected behaviour later on
 }
 
-template<typename T>
-typename skiplist<T>::iterator skiplist<T>::find(T value) {
+template<typename T, typename X>
+// Assume that iterator is valid
+// After erasing, move on to the next element
+typename skiplist<T, X>::iterator skiplist<T, X>::erase(typename skiplist<T, X>::iterator it) {
+    SLNode<T> *follow = it.node;
+    // This is the node for sure
+    follow->count--;
+    --size_;
+
+    if(follow->count)
+        return it;
+
+    // Remove it if count is zero
+    last = follow->back;
+    SLNode<T> *tmp, *ret(follow->next);
+    // Go up all levels of that node and delete them
+    while(follow) {
+        follow->back->next = follow->next;
+        if(follow->next)
+            follow->next->back = follow->back;
+        tmp = follow->up;
+        delete follow;
+        follow = tmp;
+    }
+    return iterator(ret);
+    // NOTE: If there are bugs in this function due to layer management
+    // check the erase function above for explanantion and fixes
+}
+
+template<typename T, typename X>
+typename skiplist<T, X>::iterator skiplist<T, X>::find(T value) {
     // Same algorithm as erase, but without erasing anything ;)
     if(key.empty())
         return end();
@@ -501,16 +545,16 @@ typename skiplist<T>::iterator skiplist<T>::find(T value) {
     SLNode<T>* follow = key.back();
     // Go on till level 0
     while(follow->down) {
-        while(follow->next && follow->next->val < value)
+        while(follow->next && compare(follow->next->val, value))
             follow = follow->next;
         follow = follow->down;
     }
     // Traverse at level 0 till dest reached
-    while(follow->next && follow->next->val < value)
+    while(follow->next && compare(follow->next->val, value))
         follow = follow->next;
 
     // If not exist, leave
-    if(!follow->next || follow->next->val != value)
+    if(!follow->next || !_420_is_equal(follow->next->val, value, compare))
         return end();
 
     // This is the node for sure

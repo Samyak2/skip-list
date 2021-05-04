@@ -27,6 +27,15 @@ int main() {
     std::cout << "Reverse iterator:\n";
     display(iskip.rbegin(), iskip.rend());
 
+    std::cout << "Erasing with iterators:\n";
+    auto it = iskip.find(3);
+    if(it != std::end(iskip)) {
+        iskip.erase(it);
+        std::cout << "Erased (I think?) \n";
+    }
+    else
+        std::cout << "Something very wrong\n";
+
     std::cout << "Forward constant iterator :\n";
     display(iskip.cbegin(), iskip.cend());
 
