@@ -13,4 +13,7 @@ int main() {
 
 	std::cout << std::boolalpha;
 	std::cout << std::equal(begin(s1), end(s1), begin(s2)) << "\n";
+
+	// for_each
+	std::for_each(begin(s1), end(s1), [](int e) { std::cout << e << "\t"; });
 }
