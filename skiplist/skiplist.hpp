@@ -486,12 +486,16 @@ void skiplist<T, X>::erase(T value) {
     // If counter is zero, remove it
     // If value does not exist, exit
 
+    // This is the prev nodes for all levels
+    std::vector<SLNode<T>*> history;
     // Start from top left
     SLNode<T>* follow = key.back();
     // Go on till level 0
     while(follow->down) {
         while(follow->next && compare(follow->next->val, value))
             follow = follow->next;
+
+        history.push_back(follow);
         follow = follow->down;
     }
     // Traverse at level 0 till dest reached
@@ -506,7 +510,28 @@ void skiplist<T, X>::erase(T value) {
     follow = follow->next;
     follow->valz.pop_back();
     follow->count--;
+    follow->width--;
     --size_;
+
+    int num_direct = 0;
+    // decrease width of all direct upper level nodes
+    for (auto upper_node = follow->up;
+         upper_node;
+         upper_node = upper_node->up) {
+      upper_node->width--;
+      ++num_direct;
+    }
+
+    // decrease width of all (prev) upper level nodes
+    auto upper_node = history.rbegin();
+    for (int i = 0;
+         i < num_direct && upper_node != history.rend();
+         ++i) upper_node++;
+
+    for (; upper_node != history.rend();
+         upper_node++) {
+      (*upper_node)->width--;
+    }
 
     if(follow->count)
         return;
@@ -515,6 +540,9 @@ void skiplist<T, X>::erase(T value) {
     SLNode<T> *tmp;
     // Go up all levels of that node and delete them
     while(follow) {
+        // update width of previos ones
+        follow->back->width += follow->width;
+
         follow->back->next = follow->next;
         if(follow->next)
             follow->next->back = follow->back;

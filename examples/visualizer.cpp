@@ -30,4 +30,11 @@ int main() {
     std::cout << "At index 0: " << iskip[0] << std::endl;
     std::cout << "At index 1: " << iskip[1] << std::endl;
     std::cout << "At index 5: " << iskip[5] << std::endl;
+
+    iskip.erase(5);
+    iskip.erase(5);
+
+    visualize<int>(iskip);
+
+    visualize_width(iskip);
 }
