@@ -112,21 +112,6 @@ public:
         }
     }
 
-    // specialized functions
-    void insert(val_type value);
-    // erase can be overloaded
-    // this version finds the value and deletes the node if it exists
-    // one more version of erase is passing an iterator object
-    void erase(val_type value);
-    iterator erase(iterator it);
-    iterator find(val_type value);
-    // smol count function to match set interface
-    int count(val_type value) {
-        auto it = find(value);
-        return it!=end() ? it.node->count : 0;
-    }
-    friend void visualize<val_type>(const skiplist<val_type>&);
-
     // At every level, go on till nullptr and delete everything in its path
     // then go on to the upper level
     ~skiplist() {
@@ -139,7 +124,43 @@ public:
             }
     }
 
-    // acts like a getter
+    // move constructor
+    skiplist(skiplist &&other) 
+    : key(other.key), size_(other.size_), last(other.last) {
+        _setup_random_number_generator();
+        // thief! thief! resources gon :(
+        other.key.clear();
+    }
+
+    // move assignment. Apparently, this cannot be a friend :(
+    skiplist& operator=(skiplist &&rhs) {
+        // Ruthlessly STEAAAAL
+        key.clear();
+        copy(rhs.key.begin(), rhs.key.end(), key.begin());
+        rhs.key.clear();
+        size_ = rhs.size_;
+        last = rhs.last;
+
+        return *this;
+    }
+
+    // specialized functions
+    void insert(val_type value);
+
+    // erase can be overloaded
+    // this version finds the value and deletes the node if it exists
+    // one more version of erase is passing an iterator object
+    void erase(val_type value);
+    iterator erase(iterator it);
+
+    iterator find(val_type value);
+    // smol count function to match set interface
+
+    int count(val_type value) {
+        auto it = find(value);
+        return  it != end() ? it.node->count : 0;
+    }
+    friend void visualize<val_type>(const skiplist<val_type>&);
     int size() { return size_;}
 
     // forward iterator to begin
