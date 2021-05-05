@@ -77,8 +77,16 @@ private:
     }
 
 public:
-    class const_iterator;
+    // one mega iterator
+    // because... everything is cake?
+    template<bool reversal = false>
+    class cake_iterator;
+
+    // all the other iterators
+    using const_iterator = cake_iterator<>;
     using iterator = const_iterator;
+    using const_reverse_iterator = cake_iterator<true>;
+    using reverse_iterator = const_reverse_iterator;
 
     skiplist() : size_(0), last(nullptr) {_setup_random_number_generator();}
 
@@ -139,24 +147,30 @@ public:
     // forward iterator to one beyond last.
     iterator end() { return iterator(nullptr); };
     // reverse iterator pointing to last element
-    iterator rbegin() { return iterator(last, true);}
+    reverse_iterator rbegin() { return reverse_iterator(last);}
     // sneak trick -> if the list is empty, last will be a nullptr
     // thus returning rbegin() is okay. it also provides good symmetry wrt begin
-    iterator rend() { return key.empty() ? rbegin() : iterator(key[0], true);}
+    reverse_iterator rend() { return key.empty() ? rbegin() : reverse_iterator(key[0]);}
     // constant forward iterator
     const_iterator cbegin() { return key.empty() ? cend() : const_iterator(key[0]->next);}
     // constant forward iterator pointing to one beyond the last node
     const_iterator cend() { return const_iterator(nullptr); }
     // constant reverse iterator pointing to last element
-    const_iterator crbegin() { return const_iterator(last, true); }
+    const_reverse_iterator crbegin() { return const_reverse_iterator(last); }
     // constant reverse iterator pointing to last one before the first node
-    const_iterator crend() { return key.empty() ? crbegin() : const_iterator(key[0], true); }
+    const_reverse_iterator crend() {
+        return key.empty() ? crbegin() : const_reverse_iterator(key[0]); 
+    }
 };
 
 // Iterator always points to a level 0 node
 // or a nullptr for end()
-template<typename val_type, typename compare_t>
-class skiplist<val_type, compare_t>::const_iterator {
+template<
+    typename val_type, 
+    typename compare_t
+>
+template<bool reversal>
+class skiplist<val_type, compare_t>::cake_iterator {
 private:
     // since the skip list supports having non-unique elements with
     // the help of a count, to keep track of whether the iterator
@@ -189,7 +203,7 @@ public:
     // To increment or decrement this iterator, just change node
     
     SLNode<val_type> *node;
-    const_iterator(SLNode<val_type> *node_, bool reverse_=false) : node(node_) {
+    cake_iterator(SLNode<val_type> *node_) : node(node_) {
         // check iterator constructor for explanation
         node_count_ = 0;
         node_count_ref_ = 0;
@@ -198,20 +212,20 @@ public:
             node_count_ = node_->count - 1;
             node_count_ref_ = node_count_;
         }
-        this->reverse_ = reverse_;
+        reverse_ = reversal;
     }
 
-    bool operator==(const const_iterator &rhs) {
+    bool operator==(const cake_iterator &rhs) {
         return node==rhs.node && node_count_ == rhs.node_count_;
     }
-    bool operator!=(const const_iterator &rhs) { return !(*this==rhs); }
+    bool operator!=(const cake_iterator &rhs) { return !(*this==rhs); }
     
     const val_type& operator*() const {
         // black magic. who's gonna read this anyway?
         return node->valz[node_count_ref_ - node_count_];
     }
     // pre-increment operator
-    const const_iterator& operator++() {
+    const cake_iterator& operator++() {
         if(node_count_ != 0) {
             --node_count_;
             return *this;
@@ -227,14 +241,14 @@ public:
         return *this;
     }
     // post-increment opreator
-    const_iterator operator++(int) {
-        const_iterator temp(node);
+    cake_iterator operator++(int) {
+        cake_iterator temp(node);
         ++*this;
         return temp;
     }
 
     // pre-decrement operator
-    const const_iterator& operator--() {
+    const cake_iterator& operator--() {
         if(node_count_ + 1 < node_count_ref_) {
             ++node_count_;
             return *this;
@@ -250,8 +264,8 @@ public:
         return *this;
     }
     // post-decrement operator
-    const_iterator operator--(int) {
-        const_iterator temp(node);
+    cake_iterator operator--(int) {
+        cake_iterator temp(node);
         --*this;
         return temp;
     }
