@@ -325,7 +325,7 @@ void skiplist<T, X>::insert(T value) {
     if(key.empty()) {
         SLNode<T> *node = new SLNode<T>(value);
         SLNode<T> *keyd = new SLNode<T>();
-        keyd->width = 1;
+        keyd->width = 0;
         key.push_back(keyd);
         key[0]->next = node;
         node->back = key[0];
@@ -341,7 +341,7 @@ void skiplist<T, X>::insert(T value) {
             keyd->up = new SLNode<T>();
             keyd->up->down = keyd;
             keyd = keyd->up;
-            keyd->width = 1;
+            keyd->width = 0;
 
             keyd->next = node;
             node->back = keyd;
@@ -429,7 +429,7 @@ void skiplist<T, X>::insert(T value) {
             node->back = history.back();
             std::cout << "his_step" << his_step << std::endl;
             std::cout << "his back" << history.back()->width << std::endl;
-            node->width = history.back()->width - his_step + 1;
+            node->width = history.back()->width - cur_steps;
 
             history.back()->next = node;
             history.back()->width = cur_steps;
@@ -668,6 +668,13 @@ void visualize_width(const skiplist<T>& sl) {
 
             index = next_index;
         }
+        next_index = cur_index;
+
+        for (int i = 1; i < next_index - index; ++i) {
+            std::cout << "-------";
+        }
+
+        std::cout << "-E";
         std::cout << std::endl;
 
         level++;
