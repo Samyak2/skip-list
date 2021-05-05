@@ -16,7 +16,7 @@ Only the skiplist container should be visible
 template<
     typename val_type,
     typename compare_t = std::less<val_type>
-    >
+>
 class skiplist;
 
 template<typename T>
@@ -42,7 +42,7 @@ struct SLNode {
 template<
     typename val_type,
     typename compare_t
-    >
+>
 class skiplist {
 private:
     // header nodes for all levels
@@ -77,321 +77,31 @@ private:
     }
 
 public:
-    // Iterator always points to a level 0 node
-    // or a nullptr for end()
-    class iterator {
-    private:
-        // since the skip list supports
-        // having non-unique elements with
-        // the help of a count, to keep
-        // track of whether the iterator
-        // should actually move front or back
-        // given non-unique elements, we make
-        // use of these variables.
+    class const_iterator;
+    using iterator = const_iterator;
 
-        // node_count_ reprsents how many counts of the current node are
-        // remaining to be processed. node_count_ <= node_count_ref
-        int node_count_;
-        // node_count_ref_ is an unchanging count
-        // of the current's node's count, used to
-        // keep track of when to move the iterator
-        // in the reverse direction.
-        int node_count_ref_;
-
-        // Is the iterator a reverse iterator?
-        // If true, the increment operations should move to node->back instead of node->next
-        // Count calculations, technically, should not be affected I think
-        bool reverse_;
-        // One edge case we need to take care of is a reverse ++ on the first node
-        // Instead of moving to nullptr, it will move to the key vector
-        // This is currently handled by rend and crend
-
-    public:
-		// types
-        using difference_type = std::ptrdiff_t;
-        using value_type = val_type;
-        using pointer = val_type*;
-        using reference = val_type&;
-        using iterator_category = std::output_iterator_tag;
-        // To increment or decrement this iterator, just change node
-        SLNode<val_type> *node;
-        iterator(SLNode<val_type> *node_, bool reverse=false) : node(node_) {
-            // sensible defaults since gcc sux
-            node_count_ = 0;
-            node_count_ref_ = 0;
-
-            if(node_) {
-                node_count_ = node_->count - 1;
-                node_count_ref_ = node_count_;
-            }
-            this->reverse_ = reverse;
-        }
-
-        bool operator==(const iterator &rhs) {
-            return node==rhs.node && node_count_ == rhs.node_count_;
-        }
-        bool operator!=(const iterator &rhs) {
-            return !(*this==rhs);
-        }
-        // de-reference operator
-        // RVALUE returned, else skiplist could break
-        value_type operator*() const {
-            // debugging statement since this is a new feature
-            // printf("(%d, %d)", node_count_, node_count_ref_);
-
-            // this weird statement is because we're traversing a key in reverse
-            return node->valz[node_count_ref_ - node_count_];
-        }
-        // pre-increment operator
-        iterator& operator++() {
-            // only if 'all' the non-unique
-            // elements of the current node
-            // have been 'traversed' in the
-            // forward direction, move the
-            // iterator forward.
-            if(node_count_ != 0) {
-                --node_count_;
-                return *this;
-            }
-            if(reverse_) {
-                node = node->back;
-            }
-            else {
-                node = node->next;
-            }
-            if(node) {
-                node_count_ = node->count - 1;
-                node_count_ref_ = node_count_;
-            }
-            return *this;
-        }
-        // post-increment opreator
-        iterator operator++(int) {
-            if(node_count_ != 0) {
-                --node_count_;
-                return *this;
-            }
-            iterator temp(node);
-            ++*this;
-            return temp;
-        }
-        // pre-decrement operator
-        iterator& operator--() {
-            // only if 'all' the non-unique
-            // elements of the current node
-            // have been 'traversed' in the
-            // backward direction, move the
-            // iterator backward.
-            if(node_count_ + 1 < node_count_ref_) {
-                ++node_count_;
-                return *this;
-            }
-            if(reverse_) {
-                node = node->front;
-            }
-            else {
-                node = node->back;
-            }
-            if(node) {
-                node_count_ = node->count - 1;
-                node_count_ref_ = node_count_;
-            }
-            return *this;
-        }
-        // post-decrement operator
-        iterator operator--(int) {
-            if(node_count_ + 1 < node_count_ref_) {
-                ++node_count_;
-                return *this;
-            }
-            iterator temp(node);
-            --*this;
-            return temp;
-        }
-    };
-
-    class constant_iterator {
-    private:
-        // see iterator for documentation about the below variables
-        // and their use in pre, post - increment, decrement.
-        int node_count_;
-        int node_count_ref_;
-        bool reverse_;
-    public:
-		// types
-        using difference_type = std::ptrdiff_t;
-        using value_type = val_type;
-        using pointer = val_type*;
-        using reference = val_type&;
-        using iterator_category = std::output_iterator_tag;
-        // To increment or decrement this iterator, just change node
-        SLNode<val_type> *node;
-        constant_iterator(SLNode<val_type> *node_, bool reverse_=false) : node(node_) {
-            // check iterator constructor for explanation
-            node_count_ = 0;
-            node_count_ref_ = 0;
-
-            if(node_) {
-                node_count_ = node_->count - 1;
-                node_count_ref_ = node_count_;
-            }
-            this->reverse_ = reverse_;
-        }
-
-        bool operator==(const constant_iterator &rhs) {
-            return node==rhs.node && node_count_ == rhs.node_count_;
-        }
-        bool operator!=(const constant_iterator &rhs) {
-            return !(*this==rhs);
-        }
-        // de-reference operator
-        const val_type& operator*() const {
-            // check operator* of iterator for explanation
-            return node->valz[node_count_ref_ - node_count_];
-        }
-        // pre-increment operator
-        const constant_iterator& operator++() {
-            if(node_count_ != 0) {
-                --node_count_;
-                return *this;
-            }
-            if(reverse_) {
-                node = node->back;
-            }
-            else {
-                node = node->next;
-            }
-            if(node) {
-                node_count_ = node->count - 1;
-                node_count_ref_ = node_count_;
-            }
-            return *this;
-        }
-        // post-increment opreator
-        constant_iterator operator++(int) {
-            if(node_count_ != 0) {
-                --node_count_;
-                return *this;
-            }
-            constant_iterator temp(node);
-            ++*this;
-            return temp;
-        }
-        // pre-decrement operator
-        const constant_iterator& operator--() {
-            if(node_count_ + 1 < node_count_ref_) {
-                ++node_count_;
-                return *this;
-            }
-            if(reverse_) {
-                node = node->front;
-            }
-            else {
-                node = node->back;
-            }
-            if(node) {
-                node_count_ = node->count - 1;
-                node_count_ref_ = node_count_;
-            }
-            return *this;
-        }
-        // post-decrement operator
-        constant_iterator operator--(int) {
-            if(node_count_ + 1 < node_count_ref_) {
-                ++node_count_;
-                return *this;
-            }
-            constant_iterator temp(node);
-            --*this;
-            return temp;
-        }
-    };
-
-    skiplist() : size_(0), last(nullptr) {
-        this->_setup_random_number_generator();
-    }
+    skiplist() : size_(0), last(nullptr) {_setup_random_number_generator();}
 
     // iterator range is assumed to be valid.
-    // can we validate range?
+    // can we validate range? no need, screw the user :)
     template<typename InputIterator>
-    skiplist(InputIterator first, InputIterator last)
-        : size_(0), last(nullptr) {
-        this->_setup_random_number_generator();
+    skiplist(InputIterator first, InputIterator last): size_(0), last(nullptr) {
+        _setup_random_number_generator();
         // last and size_ are taken care of during insertion.
         while(first != last) {
-            this->insert(*first);
+            insert(*first);
             ++first;
         }
     }
 
-    skiplist(std::initializer_list<val_type> l)
-        : size_(0), last(nullptr) {
-        this->_setup_random_number_generator();
+    skiplist(std::initializer_list<val_type> l) : size_(0), last(nullptr) {
+        _setup_random_number_generator();
         auto first = l.begin();
         auto last = l.end();
         while(first != last) {
-            this->insert(*first);
+            insert(*first);
             ++first;
         }
-    }
-
-    // At every level, go on till nullptr and delete everything in its path
-    // then go on to the upper level
-    ~skiplist() {
-        SLNode<val_type> *tmp;
-        for(auto level: key)
-            while(level) {
-                tmp = level->next;
-                delete level;
-                level = tmp;
-            }
-    }
-
-    // acts like a getter
-    int size() {
-        return size_;
-    }
-
-    // forward iterator to begin
-    iterator begin() {
-        return key.empty() ? end() : iterator(key[0]->next);
-    }
-
-    // forward iterator to one beyond last.
-    iterator end() {
-        return iterator(nullptr);
-    };
-
-    // reverse iterator pointing to last element
-    iterator rbegin() {
-        return iterator(last, true);
-    }
-
-    // sneak trick -> if the list is empty, last will be a nullptr
-    // thus returning rbegin() is okay. it also provides good symmetry wrt begin
-    iterator rend() {
-        return key.empty() ? rbegin() : iterator(key[0], true);
-    }
-
-    // constant forward iterator
-    constant_iterator cbegin() {
-        return key.empty() ? cend() : constant_iterator(key[0]->next);
-    }
-
-    // constant forward iterator pointing to one beyond the last node
-    constant_iterator cend() {
-        return constant_iterator(nullptr);
-    }
-
-    // constant reverse iterator pointing to last element
-    constant_iterator crbegin() {
-        // cout << last->val;
-        return constant_iterator(last, true);
-    }
-
-    // constant reverse iterator pointing to last one before the first node
-    constant_iterator crend() {
-        return key.empty() ? crbegin() : constant_iterator(key[0], true);
     }
 
     // specialized functions
@@ -408,6 +118,143 @@ public:
         return it!=end() ? it.node->count : 0;
     }
     friend void visualize<val_type>(const skiplist<val_type>&);
+
+    // At every level, go on till nullptr and delete everything in its path
+    // then go on to the upper level
+    ~skiplist() {
+        SLNode<val_type> *tmp;
+        for(auto level: key)
+            while(level) {
+                tmp = level->next;
+                delete level;
+                level = tmp;
+            }
+    }
+
+    // acts like a getter
+    int size() { return size_;}
+
+    // forward iterator to begin
+    iterator begin() { return key.empty() ? end() : iterator(key[0]->next); }
+    // forward iterator to one beyond last.
+    iterator end() { return iterator(nullptr); };
+    // reverse iterator pointing to last element
+    iterator rbegin() { return iterator(last, true);}
+    // sneak trick -> if the list is empty, last will be a nullptr
+    // thus returning rbegin() is okay. it also provides good symmetry wrt begin
+    iterator rend() { return key.empty() ? rbegin() : iterator(key[0], true);}
+    // constant forward iterator
+    const_iterator cbegin() { return key.empty() ? cend() : const_iterator(key[0]->next);}
+    // constant forward iterator pointing to one beyond the last node
+    const_iterator cend() { return const_iterator(nullptr); }
+    // constant reverse iterator pointing to last element
+    const_iterator crbegin() { return const_iterator(last, true); }
+    // constant reverse iterator pointing to last one before the first node
+    const_iterator crend() { return key.empty() ? crbegin() : const_iterator(key[0], true); }
+};
+
+// Iterator always points to a level 0 node
+// or a nullptr for end()
+template<typename val_type, typename compare_t>
+class skiplist<val_type, compare_t>::const_iterator {
+private:
+    // since the skip list supports having non-unique elements with
+    // the help of a count, to keep track of whether the iterator
+    // should actually move front or back given non-unique elements, we make
+    // use of these variables.
+
+    // node_count_ reprsents how many counts of the current node are
+    // remaining to be processed. node_count_ <= node_count_ref
+    int node_count_;
+    // node_count_ref_ is an unchanging count
+    // of the current's node's count, used to
+    // keep track of when to move the iterator
+    // in the reverse direction.
+    int node_count_ref_;
+
+    // Is the iterator a reverse iterator?
+    // If true, the increment operations should move to node->back instead of node->next
+    // Count calculations, technically, should not be affected I think
+    bool reverse_;
+    // One edge case we need to take care of is a reverse ++ on the first node
+    // Instead of moving to nullptr, it will move to the key vector
+    // This is currently handled by rend and crend
+public:
+    // types
+    using difference_type = std::ptrdiff_t;
+    using value_type = val_type;
+    using pointer = val_type*;
+    using reference = val_type&;
+    using iterator_category = std::bidirectional_iterator_tag;
+    // To increment or decrement this iterator, just change node
+    
+    SLNode<val_type> *node;
+    const_iterator(SLNode<val_type> *node_, bool reverse_=false) : node(node_) {
+        // check iterator constructor for explanation
+        node_count_ = 0;
+        node_count_ref_ = 0;
+
+        if(node_) {
+            node_count_ = node_->count - 1;
+            node_count_ref_ = node_count_;
+        }
+        this->reverse_ = reverse_;
+    }
+
+    bool operator==(const const_iterator &rhs) {
+        return node==rhs.node && node_count_ == rhs.node_count_;
+    }
+    bool operator!=(const const_iterator &rhs) { return !(*this==rhs); }
+    
+    const val_type& operator*() const {
+        // black magic. who's gonna read this anyway?
+        return node->valz[node_count_ref_ - node_count_];
+    }
+    // pre-increment operator
+    const const_iterator& operator++() {
+        if(node_count_ != 0) {
+            --node_count_;
+            return *this;
+        }
+        if(reverse_)
+            node = node->back;
+        else
+            node = node->next;
+        if(node) {
+            node_count_ = node->count - 1;
+            node_count_ref_ = node_count_;
+        }
+        return *this;
+    }
+    // post-increment opreator
+    const_iterator operator++(int) {
+        const_iterator temp(node);
+        ++*this;
+        return temp;
+    }
+
+    // pre-decrement operator
+    const const_iterator& operator--() {
+        if(node_count_ + 1 < node_count_ref_) {
+            ++node_count_;
+            return *this;
+        }
+        if(reverse_)
+            node = node->next;
+        else
+            node = node->back;
+        if(node) {
+            node_count_ = node->count - 1;
+            node_count_ref_ = node_count_;
+        }
+        return *this;
+    }
+    // post-decrement operator
+    const_iterator operator--(int) {
+        const_iterator temp(node);
+        --*this;
+        return temp;
+    }
 };
 
 
