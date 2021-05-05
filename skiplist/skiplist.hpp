@@ -28,6 +28,8 @@ struct SLNode {
     SLNode *back, *next, *up, *down;
     // Value, should be templated
     T val;
+    // Storage for multiple elements
+    std::vector<T> valz;
     // Count is integer only, will only be 0 for key nodes
     int count;
     SLNode(T val_)
@@ -108,6 +110,10 @@ public:
         // To increment or decrement this iterator, just change node
         SLNode<value_type> *node;
         iterator(SLNode<value_type> *node_, bool reverse=false) : node(node_) {
+            // sensible defaults since gcc sux
+            node_count_ = 0;
+            node_count_ref_ = 0;
+
             if(node_) {
                 node_count_ = node_->count - 1;
                 node_count_ref_ = node_count_;
@@ -116,7 +122,7 @@ public:
         }
 
         bool operator==(const iterator &rhs) {
-            return node==rhs.node;
+            return node==rhs.node && node_count_ == rhs.node_count_;
         }
         bool operator!=(const iterator &rhs) {
             return !(*this==rhs);
@@ -124,7 +130,11 @@ public:
         // de-reference operator
         // RVALUE returned, else skiplist could break
         value_type operator*() const {
-            return node->val;
+            // debugging statement since this is a new feature
+            // printf("(%d, %d)", node_count_, node_count_ref_);
+
+            // this weird statement is because we're traversing a key in reverse
+            return node->valz[node_count_ref_ - node_count_];
         }
         // pre-increment operator
         iterator& operator++() {
@@ -205,6 +215,10 @@ public:
         // To increment or decrement this iterator, just change node
         SLNode<value_type> *node;
         constant_iterator(SLNode<value_type> *node_, bool reverse_=false) : node(node_) {
+            // check iterator constructor for explanation
+            node_count_ = 0;
+            node_count_ref_ = 0;
+
             if(node_) {
                 node_count_ = node_->count - 1;
                 node_count_ref_ = node_count_;
@@ -213,14 +227,15 @@ public:
         }
 
         bool operator==(const constant_iterator &rhs) {
-            return node==rhs.node;
+            return node==rhs.node && node_count_ == rhs.node_count_;
         }
         bool operator!=(const constant_iterator &rhs) {
             return !(*this==rhs);
         }
         // de-reference operator
         const value_type& operator*() const {
-            return node->val;
+            // check operator* of iterator for explanation
+            return node->valz[node_count_ref_ - node_count_];
         }
         // pre-increment operator
         const constant_iterator& operator++() {
@@ -377,6 +392,11 @@ public:
     void erase(value_type value);
     iterator erase(iterator it);
     iterator find(value_type value);
+    // smol count function to match set interface
+    int count(value_type value) {
+        auto it = find(value);
+        return it!=end() ? it.node->count : 0;
+    }
     friend void visualize<value_type>(const skiplist<value_type>&);
 };
 
@@ -394,7 +414,7 @@ bool _420_is_equal(T &a, T& b, op less_than) {
 }
 
 template<typename T, typename X>
-// Inserting same value just increments count
+// Inserting same will put it in a store and increment count
 // Insertion always starts at level 0
 void skiplist<T, X>::insert(T value) {
     ++size_;
@@ -407,6 +427,8 @@ void skiplist<T, X>::insert(T value) {
         key[0]->next = node;
         node->back = key[0];
         last = node;
+        // Put the value into the store
+        node->valz.push_back(value);
         // Now insert some more, probabilistically
         while(this->dist_(this->mt_) > 0.5) {
             node->up = new SLNode<T>(value);
@@ -442,13 +464,11 @@ void skiplist<T, X>::insert(T value) {
     while(follow->next && compare(follow->next->val,value))
         follow = follow->next;
 
-    // If node already exists, just increment its count
+    // If node already exists, add the new value to the store
     if(follow->next && _420_is_equal(follow->next->val, value, compare)) {
         follow = follow->next;
-        while(follow) {
-            follow->count++;
-            follow = follow->up;
-        }
+        follow->count++;
+        follow->valz.push_back(value);
         return;
     }
 
@@ -461,7 +481,9 @@ void skiplist<T, X>::insert(T value) {
     follow->next = node;
     if(!node->next)
         last = node;
-
+    // Add into storage
+    node->valz.push_back(value);
+    
     // Probabilistically add more levels
     while(this->dist_(this->mt_) > 0.5) {
         node->up = new SLNode<T>(value);
@@ -515,6 +537,7 @@ void skiplist<T, X>::erase(T value) {
 
     // This is the node for sure
     follow = follow->next;
+    follow->valz.pop_back();
     follow->count--;
     --size_;
 
@@ -547,6 +570,7 @@ typename skiplist<T, X>::iterator skiplist<T, X>::erase(typename skiplist<T, X>:
     SLNode<T> *follow = it.node;
     // This is the node for sure
     follow->count--;
+    follow->valz.pop_back();
     --size_;
 
     if(follow->count)
@@ -598,6 +622,10 @@ typename skiplist<T, X>::iterator skiplist<T, X>::find(T value) {
 
 template<typename T>
 void visualize(const skiplist<T>& sl) {
+    if (sl.key.empty()) {
+      std::cout << "EMPTY SKIPLIST" << std::endl;
+      return;
+    }
 
     // store mapping of node->index in a map
     std::map<T, int> index_store{};
