@@ -557,6 +557,14 @@ void visualize(const skiplist<T>& sl) {
 
             index = next_index;
         }
+        next_index = cur_index;
+
+        for (int i = 1; i < next_index - index; ++i) {
+            std::cout << "----";
+        }
+
+        std::cout << "-E";
+
         std::cout << std::endl;
 
         level++;
