@@ -14,8 +14,8 @@ Only the skiplist container should be visible
 #include <iostream>
 
 template<
-    typename value_type,
-    typename compare_t = std::less<value_type>
+    typename val_type,
+    typename compare_t = std::less<val_type>
     >
 class skiplist;
 
@@ -40,17 +40,17 @@ struct SLNode {
 };
 
 template<
-    typename value_type,
+    typename val_type,
     typename compare_t
     >
 class skiplist {
 private:
     // header nodes for all levels
-    std::vector<SLNode<value_type>*> key;
+    std::vector<SLNode<val_type>*> key;
     // number of nodes in the skiplist (including non-unique ones)
     int size_;
     // the last node at level 0
-    SLNode<value_type>* last;
+    SLNode<val_type>* last;
 
     // stuff required for random number generation
     // see constructor for description/reference
@@ -79,7 +79,7 @@ private:
 public:
     // Iterator always points to a level 0 node
     // or a nullptr for end()
-    class iterator : std::bidirectional_iterator_tag {
+    class iterator {
     private:
         // since the skip list supports
         // having non-unique elements with
@@ -107,9 +107,15 @@ public:
         // This is currently handled by rend and crend
 
     public:
+		// types
+        using difference_type = std::ptrdiff_t;
+        using value_type = val_type;
+        using pointer = val_type*;
+        using reference = val_type&;
+        using iterator_category = std::output_iterator_tag;
         // To increment or decrement this iterator, just change node
-        SLNode<value_type> *node;
-        iterator(SLNode<value_type> *node_, bool reverse=false) : node(node_) {
+        SLNode<val_type> *node;
+        iterator(SLNode<val_type> *node_, bool reverse=false) : node(node_) {
             // sensible defaults since gcc sux
             node_count_ = 0;
             node_count_ref_ = 0;
@@ -212,9 +218,15 @@ public:
         int node_count_ref_;
         bool reverse_;
     public:
+		// types
+        using difference_type = std::ptrdiff_t;
+        using value_type = val_type;
+        using pointer = val_type*;
+        using reference = val_type&;
+        using iterator_category = std::output_iterator_tag;
         // To increment or decrement this iterator, just change node
-        SLNode<value_type> *node;
-        constant_iterator(SLNode<value_type> *node_, bool reverse_=false) : node(node_) {
+        SLNode<val_type> *node;
+        constant_iterator(SLNode<val_type> *node_, bool reverse_=false) : node(node_) {
             // check iterator constructor for explanation
             node_count_ = 0;
             node_count_ref_ = 0;
@@ -233,7 +245,7 @@ public:
             return !(*this==rhs);
         }
         // de-reference operator
-        const value_type& operator*() const {
+        const val_type& operator*() const {
             // check operator* of iterator for explanation
             return node->valz[node_count_ref_ - node_count_];
         }
@@ -312,7 +324,7 @@ public:
         }
     }
 
-    skiplist(std::initializer_list<value_type> l)
+    skiplist(std::initializer_list<val_type> l)
         : size_(0), last(nullptr) {
         this->_setup_random_number_generator();
         auto first = l.begin();
@@ -326,7 +338,7 @@ public:
     // At every level, go on till nullptr and delete everything in its path
     // then go on to the upper level
     ~skiplist() {
-        SLNode<value_type> *tmp;
+        SLNode<val_type> *tmp;
         for(auto level: key)
             while(level) {
                 tmp = level->next;
@@ -383,19 +395,19 @@ public:
     }
 
     // specialized functions
-    void insert(value_type value);
+    void insert(val_type value);
     // erase can be overloaded
     // this version finds the value and deletes the node if it exists
     // one more version of erase is passing an iterator object
-    void erase(value_type value);
+    void erase(val_type value);
     iterator erase(iterator it);
-    iterator find(value_type value);
+    iterator find(val_type value);
     // smol count function to match set interface
-    int count(value_type value) {
+    int count(val_type value) {
         auto it = find(value);
         return it!=end() ? it.node->count : 0;
     }
-    friend void visualize<value_type>(const skiplist<value_type>&);
+    friend void visualize<val_type>(const skiplist<val_type>&);
 };
 
 
