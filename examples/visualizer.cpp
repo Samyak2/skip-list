@@ -12,6 +12,11 @@ int main() {
     for(int i=0; i<10; i++)
         iskip.insert(i);
 
+    visualize_width(iskip);
+
+    for(int i=0; i<10; i++)
+        iskip.insert(i);
+
     visualize<int>(iskip);
 
     visualize_width(iskip);

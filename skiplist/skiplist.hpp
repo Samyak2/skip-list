@@ -385,19 +385,49 @@ void skiplist<T, X>::insert(T value) {
     if(follow->next && _420_is_equal(follow->next->val, value, compare)) {
         follow = follow->next;
         follow->count++;
-        // TODO: increment upper nodes also
         follow->width++;
         follow->valz.push_back(value);
+
+//         visualize_width(*this);
+//         std::cout << "befoooooore\n" << std::endl;
+
+        int num_direct = 0;
+        // increase width of all direct upper level nodes
+        for (auto upper_node = follow->up;
+             upper_node;
+             upper_node = upper_node->up) {
+          upper_node->width++;
+          ++num_direct;
+        }
+
+//         visualize_width(*this);
+//         std::cout << "not so befoooooore\n" << std::endl;
+
+        // increase width of all (prev) upper level nodes
+        auto upper_node = history.rbegin();
+        for (int i = 0;
+             i < num_direct && upper_node != history.rend();
+             ++i) upper_node++;
+
+        for (; upper_node != history.rend();
+             upper_node++) {
+          // std::cout << "aaaaaaaaa" << std::endl;
+          (*upper_node)->width++;
+        }
+
+//         visualize_width(*this);
+//         std::cout << "afterrrrrrr\n" << std::endl;
+
         return;
     }
 
-    std::cout << "inserting " << value << std::endl;
-    for (auto steps_: history_steps) {
-      std::cout << steps_ << std::endl;
-    }
-    std::cout << steps << std::endl;
-    visualize_width(*this);
-    std::cout << "aaaaa\n";
+    // std::cout << "inserting " << value << std::endl;
+    // for (auto steps_: history_steps) {
+    //   std::cout << steps_ << std::endl;
+    // }
+    // std::cout << steps << std::endl;
+    // visualize_width(*this);
+    // std::cout << "aaaaa\n";
 
     // Value does not exist. Insert a new node
     SLNode<T> *node = new SLNode<T>(value), *keyd = key.back();
@@ -427,8 +457,8 @@ void skiplist<T, X>::insert(T value) {
             // how to handle width here??
             node->next = history.back()->next;
             node->back = history.back();
-            std::cout << "his_step" << his_step << std::endl;
-            std::cout << "his back" << history.back()->width << std::endl;
+            // std::cout << "his_step" << his_step << std::endl;
+            // std::cout << "his back" << history.back()->width << std::endl;
             node->width = history.back()->width - cur_steps;
 
             history.back()->next = node;
@@ -643,8 +673,11 @@ void visualize_width(const skiplist<T>& sl) {
     auto level = sl.key.rbegin();
     auto end = sl.key.rend();
     while(level != end) {
+        int total_width = 0;
+
         // S denotes start of level, could be something different
         std::cout << "S<" << (*level)->width << ">";
+        total_width += (*level)->width;
 
         // to store previous element's index
         // and current element's index
@@ -664,6 +697,7 @@ void visualize_width(const skiplist<T>& sl) {
             // width of printed element is hardcoded to 3 for now
             // the padding is filled with ""-"
             std::cout << "-" << std::setfill('-') << std::setw(3) << it->val << "<" << it->width << ">";
+            total_width += it->width;
             it = it->next;
 
             index = next_index;
@@ -676,6 +710,8 @@ void visualize_width(const skiplist<T>& sl) {
 
         std::cout << "-E";
         std::cout << std::endl;
+
+        std::cout << "Total width at level " << total_width << std::endl;
 
         level++;
     }
