@@ -8,6 +8,7 @@ Only the skiplist container should be visible
 #include <map>
 #include <random>
 #include <iterator>
+#include <initializer_list>
 
 #include <iomanip>
 #include <iostream>
@@ -15,7 +16,7 @@ Only the skiplist container should be visible
 template<
     typename value_type,
     typename compare_t = std::less<value_type>
->
+    >
 class skiplist;
 
 template<typename T>
@@ -39,7 +40,7 @@ struct SLNode {
 template<
     typename value_type,
     typename compare_t
->
+    >
 class skiplist {
 private:
     // header nodes for all levels
@@ -56,6 +57,22 @@ private:
 
     // template objects, since compare is supposed to be a functor
     compare_t compare;
+
+    // setup random number generator and uniform
+    // distribution to help with probabilistic
+    // insertion.
+    void _setup_random_number_generator() {
+        // set up random number generator
+        // ref: https://stackoverflow.com/a/19666713/11199009
+        std::random_device rd;
+        // ref: https://www.cplusplus.com/reference/random/mt19937_64/
+        std::mt19937_64 mt(rd());
+        // usage of this is: dist(mt)
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+        this->mt_ = mt;
+        this->dist_ = dist;
+    }
 
 public:
     // Iterator always points to a level 0 node
@@ -264,16 +281,33 @@ public:
     };
 
     skiplist() : size_(0), last(nullptr) {
-      // set up random number generator
-      // ref: https://stackoverflow.com/a/19666713/11199009
-      std::random_device rd;
-      // ref: https://www.cplusplus.com/reference/random/mt19937_64/
-      std::mt19937_64 mt(rd());
-      // usage of this is: dist(mt)
-      std::uniform_real_distribution<double> dist(0.0, 1.0);
+        this->_setup_random_number_generator();
+    }
 
-      this->mt_ = mt;
-      this->dist_ = dist;
+    // iterator range is assumed to be valid.
+    // can we validate range?
+    template<typename InputIterator>
+    skiplist(InputIterator first, InputIterator last)
+        : size_(0), last(nullptr) {
+        // last and size_ are taken care of during insertion.
+        while(first != last) {
+            this->insert(*first);
+            ++first;
+            ++size_;
+        }
+        this->_setup_random_number_generator();
+    }
+
+    skiplist(std::initializer_list<value_type> l)
+        : size_(0), last(nullptr) {
+        auto first = l.begin();
+        auto last = l.end();
+        while(first != last) {
+            this->insert(*first);
+            ++first;
+            ++size_;
+        }
+        this->_setup_random_number_generator();
     }
 
     // At every level, go on till nullptr and delete everything in its path

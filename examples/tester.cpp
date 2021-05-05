@@ -1,6 +1,7 @@
 #include <iostream>
 #include <set>
 #include <skiplist.hpp>
+#include <vector>
 
 // standard
 using std::begin;
@@ -62,18 +63,13 @@ int main() {
     foundit(iskip, 2);
     foundit(iskip, 7);
 
-    display(iskip.rbegin(), iskip.rend());
+	std::vector<int> v = {10, 4, 3, 6, 1};
+	skiplist<int> skiplistFromVector(begin(v), end(v));
+	cout << "Skiplist constructed from vector:\n";
+	display(begin(skiplistFromVector), end(skiplistFromVector));
 
-    // need to make operator++, operator* for the iterator for this one
-    // maybe instead of following the multiset method we print out (key, count)?
-    cout << "The skiplist has:\n";
-    //for(auto e: iskip) {
-    //    cout << e << " ";
-    //}
-    cout << "\n";
-
-    cout << "The skiplist in reverse:\n";
-    //display(iskip.begin(), iskip.end());
-
+	skiplist<double> slFromInitializer = {1.1, 0.5, 100.3};
+	cout << "Skiplist constructed using initialzer_list:\n";
+	display(begin(slFromInitializer), end(slFromInitializer));
     cout << "No runtime exceptions. YAY!\n";
 }

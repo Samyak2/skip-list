@@ -38,3 +38,6 @@
 build
 # cmake cache
 .cache
+
+# vim swap files
+*.swp
