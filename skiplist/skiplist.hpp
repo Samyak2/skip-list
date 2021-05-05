@@ -168,6 +168,7 @@ public:
         return  it != end() ? it.node->count : 0;
     }
     friend void visualize<val_type>(const skiplist<val_type>&);
+    friend void visualize_width<val_type>(const skiplist<val_type>&);
     int size() { return size_;}
 
     // forward iterator to begin
@@ -297,8 +298,8 @@ public:
         --*this;
         return temp;
     }
-    friend void visualize<value_type>(const skiplist<value_type>&);
-    friend void visualize_width<value_type>(const skiplist<value_type>&);
+    friend void visualize<val_type>(const skiplist<val_type>&);
+    friend void visualize_width<val_type>(const skiplist<val_type>&);
 };
 
 
