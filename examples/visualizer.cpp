@@ -9,8 +9,10 @@ int main() {
     std::srand(time(0));
 
     skiplist<int> iskip;
-    for(int i=0; i<30; i++)
+    for(int i=0; i<10; i++)
         iskip.insert(i);
 
     visualize<int>(iskip);
+
+    visualize_width(iskip);
 }

@@ -23,6 +23,9 @@ template<typename T>
 void visualize(const skiplist<T>&);
 
 template<typename T>
+void visualize_width(const skiplist<T>&);
+
+template<typename T>
 struct SLNode {
     // Poorly named - left, right, up, down pointers
     SLNode *back, *next, *up, *down;
@@ -32,11 +35,15 @@ struct SLNode {
     std::vector<T> valz;
     // Count is integer only, will only be 0 for key nodes
     int count;
+    // number of elements skipped in the below level
+    // used for indexing
+    int width;
+
     SLNode(T val_)
-        : back(nullptr), next(nullptr), up(nullptr), down(nullptr), val(val_), count(1) {}
+        : back(nullptr), next(nullptr), up(nullptr), down(nullptr), val(val_), count(1), width(1) {}
     // TODO: not nice, T must have default constructor, must figure a workaround
     SLNode()
-        : back(nullptr), next(nullptr), up(nullptr), down(nullptr), count(0) {}
+        : back(nullptr), next(nullptr), up(nullptr), down(nullptr), count(0), width(0) {}
 };
 
 template<
@@ -290,6 +297,8 @@ public:
         --*this;
         return temp;
     }
+    friend void visualize<value_type>(const skiplist<value_type>&);
+    friend void visualize_width<value_type>(const skiplist<value_type>&);
 };
 
 
@@ -315,6 +324,7 @@ void skiplist<T, X>::insert(T value) {
     if(key.empty()) {
         SLNode<T> *node = new SLNode<T>(value);
         SLNode<T> *keyd = new SLNode<T>();
+        keyd->width = 1;
         key.push_back(keyd);
         key[0]->next = node;
         node->back = key[0];
@@ -330,6 +340,7 @@ void skiplist<T, X>::insert(T value) {
             keyd->up = new SLNode<T>();
             keyd->up->down = keyd;
             keyd = keyd->up;
+            keyd->width = 1;
 
             keyd->next = node;
             node->back = keyd;
@@ -343,26 +354,49 @@ void skiplist<T, X>::insert(T value) {
 
     // This is the prev nodes for all levels
     std::vector<SLNode<T>*> history;
+    // number of steps followed at every level
+    std::vector<int> history_steps;
     // Search always starts from the upper left node
     SLNode<T>* follow = key.back();
     // Go on till level 0
+    int steps = 0;
     while(follow->down) {
-        while(follow->next && compare(follow->next->val,value))
+        int local_steps = 0;
+        while(follow->next && compare(follow->next->val,value)) {
+            local_steps += follow->width;
             follow = follow->next;
+        }
+        // local_steps += follow->width;
+
         history.push_back(follow);
+        history_steps.push_back(local_steps);
+        // steps += local_steps + follow->width;
         follow = follow->down;
     }
     // Traverse at level 0 till dest reached
-    while(follow->next && compare(follow->next->val,value))
+    while(follow->next && compare(follow->next->val,value)) {
+        steps += follow->width;
         follow = follow->next;
+    }
+    steps += follow->width;
 
     // If node already exists, add the new value to the store
     if(follow->next && _420_is_equal(follow->next->val, value, compare)) {
         follow = follow->next;
         follow->count++;
+        // TODO: increment upper nodes also
+        follow->width++;
         follow->valz.push_back(value);
         return;
     }
+
+    std::cout << "inserting " << value << std::endl;
+    for (auto steps_: history_steps) {
+      std::cout << steps_ << std::endl;
+    }
+    std::cout << steps << std::endl;
+    visualize_width(*this);
+    std::cout << "aaaaa\n";
 
     // Value does not exist. Insert a new node
     SLNode<T> *node = new SLNode<T>(value), *keyd = key.back();
@@ -376,16 +410,32 @@ void skiplist<T, X>::insert(T value) {
     // Add into storage
     node->valz.push_back(value);
 
+    // increase width of all (prev) upper level nodes
+    for (auto upper_node = history.begin(); upper_node != history.end(); upper_node++) {
+      (*upper_node)->width++;
+    }
+
+    int cur_steps = steps;
     // Probabilistically add more levels
     while(this->dist_(this->mt_) > 0.5) {
         node->up = new SLNode<T>(value);
         node->up->down = node;
         node = node->up;
         if(!history.empty()) {
+            int his_step = history_steps.back() + 1;
+            // how to handle width here??
             node->next = history.back()->next;
             node->back = history.back();
+            std::cout << "his_step" << his_step << std::endl;
+            std::cout << "his back" << history.back()->width << std::endl;
+            node->width = history.back()->width - his_step + 1;
+
             history.back()->next = node;
+            history.back()->width = cur_steps;
+
             history.pop_back();
+            history_steps.pop_back();
+            cur_steps += his_step - 1;
         }
         else {
             // add directly to the key
@@ -393,6 +443,7 @@ void skiplist<T, X>::insert(T value) {
             keyd->up = new SLNode<T>();
             keyd->up->down = keyd;
             keyd = keyd->up;
+            keyd->width = cur_steps;
 
             keyd->next = node;
             node->back = keyd;
@@ -565,6 +616,57 @@ void visualize(const skiplist<T>& sl) {
 
         std::cout << "-E";
 
+        std::cout << std::endl;
+
+        level++;
+    }
+}
+
+template<typename T>
+void visualize_width(const skiplist<T>& sl) {
+    if (sl.key.empty()) {
+      std::cout << "EMPTY SKIPLIST" << std::endl;
+      return;
+    }
+
+    // store mapping of node->index in a map
+    std::map<T, int> index_store{};
+    auto bottom_it = (*(sl.key.begin()))->next;
+    int cur_index = 0;
+    while (bottom_it) {
+        index_store[bottom_it->val] = cur_index;
+        cur_index++;
+        bottom_it = bottom_it->next;
+    }
+
+    auto level = sl.key.rbegin();
+    auto end = sl.key.rend();
+    while(level != end) {
+        // S denotes start of level, could be something different
+        std::cout << "S<" << (*level)->width << ">";
+
+        // to store previous element's index
+        // and current element's index
+        int index = -1, next_index;
+        // skip the first element - it is always 0
+        auto it = (*level)->next;
+        // iterate through the list at this level
+        while (it) {
+            next_index = index_store[it->val];
+
+            // filler to align it correctly
+            // when elements in between don't exist at this level
+            for (int i = 1; i < next_index - index; ++i) {
+                std::cout << "-------";
+            }
+
+            // width of printed element is hardcoded to 3 for now
+            // the padding is filled with ""-"
+            std::cout << "-" << std::setfill('-') << std::setw(3) << it->val << "<" << it->width << ">";
+            it = it->next;
+
+            index = next_index;
+        }
         std::cout << std::endl;
 
         level++;
