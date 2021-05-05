@@ -561,6 +561,8 @@ void skiplist<T, X>::erase(T value) {
 template<typename T, typename X>
 // Assume that iterator is valid
 // After erasing, move on to the next element
+// TODO: width (for indexing) is not handled here
+//       using this will break indexing
 typename skiplist<T, X>::iterator skiplist<T, X>::erase(typename skiplist<T, X>::iterator it) {
     SLNode<T> *follow = it.node;
     // This is the node for sure
