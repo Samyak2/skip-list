@@ -6,6 +6,7 @@ Only the skiplist container should be visible
 #define SKIPLIST_H
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <random>
 #include <iterator>
 #include <initializer_list>
@@ -33,10 +34,17 @@ struct SLNode {
     // Count is integer only, will only be 0 for key nodes
     int count;
     SLNode(T val_)
-        : back(nullptr), next(nullptr), up(nullptr), down(nullptr), val(val_), count(1) {}
+    : back(nullptr), next(nullptr), up(nullptr), down(nullptr), val(val_), count(1) {}
     // TODO: not nice, T must have default constructor, must figure a workaround
     SLNode()
-        : back(nullptr), next(nullptr), up(nullptr), down(nullptr), count(0) {}
+    : back(nullptr), next(nullptr), up(nullptr), down(nullptr), count(0) {}
+    
+    // Special copy constructor
+    SLNode(SLNode other, int)
+    : back(nullptr), next(nullptr), up(nullptr), down(nullptr), valz(other.valz) {
+        val = other.val;
+        count = other.count;
+    }
 };
 
 template<
@@ -114,7 +122,7 @@ public:
 
     // At every level, go on till nullptr and delete everything in its path
     // then go on to the upper level
-    ~skiplist() {
+    void destroy_all_levels() {
         SLNode<val_type> *tmp;
         for(auto level: key)
             while(level) {
@@ -122,7 +130,10 @@ public:
                 delete level;
                 level = tmp;
             }
+        key.clear();
     }
+    
+    ~skiplist() { destroy_all_levels(); }
 
     // move constructor
     skiplist(skiplist &&other) 
@@ -134,10 +145,99 @@ public:
 
     // move assignment. Apparently, this cannot be a friend :(
     skiplist& operator=(skiplist &&rhs) {
+        // sanity check
+        if(this == &rhs)
+        // what have you bought upon this cursed land?
+            return *this;
+
         // Ruthlessly STEAAAAL
-        key.clear();
-        copy(rhs.key.begin(), rhs.key.end(), key.begin());
+        destroy_all_levels();
+        key = rhs.key;
+        size_ = rhs.size_;
+        last = rhs.last;
+
         rhs.key.clear();
+        rhs.size_ = 0;
+        rhs.last = nullptr;
+
+        return *this;
+    }
+
+    // copy a key structure from one node to another
+    // O(n) time & O(n) space algorithm 
+    void perform_key_transfer(const skiplist &other) {
+        if(other.key.empty())
+            return;
+        
+        // map node pointers through s p a c e. has info about ...
+        // which node of L (i.e LHS) is holding the node from R (i.e. RHS)
+        // useful to map horizontal pointers between two levels
+        std::unordered_map<SLNode<val_type>*, SLNode<val_type>*> twister, jenga;
+        SLNode<val_type> *trav_r, *trav_l;
+        // handy, because all level 0 nodes have a down pointer to nullptr
+        jenga[nullptr] = nullptr;
+
+        // map level 0
+        // now map the higher levels
+        // oh chuck, just map them all
+        for(int i=0; i<other.key.size(); i++) {
+            
+            trav_r = other.key[i]->next;
+            trav_l = new SLNode<val_type>();
+            key.push_back(trav_l);
+            while(trav_r) {
+                trav_l->next = new SLNode<val_type>(*trav_r, 15081947);
+                trav_l->next->back = trav_l;
+                trav_l = trav_l->next;
+                
+                twister[trav_r] = trav_l;
+                // my favourite exit strategy :)
+                if(jenga.find(trav_r->down)==jenga.end()) {
+                    std::cout << "Should never see here! In Copy constructor\n";
+                    std::cout.flush();
+                    int *x(nullptr);
+                    *x = *x;
+                }
+                // continue with normal execution
+                trav_l->down = jenga[trav_r->down];
+                
+                if(trav_l->down)
+                    trav_l->down->up = trav_l;
+                
+                trav_r = trav_r->next;
+            }
+            // special case for level 0. need to get the last node pointer
+            if(i==0)
+                last = twister[other.last];
+
+            // move the current level pointers to the prev-level-pointer store
+            jenga = twister;
+            twister.clear();
+        }
+        // properly interleave the up down nodes of the key stack
+        for(int i=1; i<key.size(); i++) {
+            key[i]->down = key[i-1];
+            key[i-1]->up = key[i];
+        }
+    }
+
+    // copy constructor
+    skiplist(const skiplist &other) 
+    : size_(other.size_) {
+        _setup_random_number_generator();
+        perform_key_transfer(other);
+    }
+
+    // copy assignment operator
+    skiplist& operator=(const skiplist &rhs) {
+        // sanity check
+        if(this == &rhs)
+        // what have you bought upon this cursed land?
+            return *this;
+
+        // name's cat ... *copy* cat :|
+        destroy_all_levels();
+        perform_key_transfer(rhs);
         size_ = rhs.size_;
         last = rhs.last;
 
@@ -300,6 +400,7 @@ public:
 */
 
 // utility function to check equality, am lazy
+// https://twitter.com/acemarke/status/1072342186396667905
 template<typename T, typename op>
 bool _420_is_equal(T &a, T& b, op less_than) {
     return !less_than(a, b) && !less_than(b, a);

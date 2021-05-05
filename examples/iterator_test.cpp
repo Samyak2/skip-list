@@ -4,7 +4,7 @@
 template<typename T>
 void display(T first, T last) {
     while(first != last) {
-      std::cout << *first << " ";
+        std::cout << *first << " ";
         ++first;
     }
     std::cout << "\n";
@@ -41,4 +41,24 @@ int main() {
 
     std::cout << "Reverse constant iterator:\n";
     display(iskip.crbegin(), iskip.crend());
+
+    std::cout << "\nENDL\n\n";
+    std::cout << "Creating a new skiplist with the copy constructor:\n";
+
+    skiplist<int> uskip(iskip);
+    std::cout << "Reverse constant iterator\n";
+    display(uskip.crbegin(), uskip.crend());
+    std::cout << "Deleting elements - 0 20 22\n";
+    uskip.erase(20);
+    uskip.erase(0);
+    uskip.erase(22);
+    std::cout << "Forward iterator :\n";
+    display(uskip.begin(), uskip.end());
+
+    std::cout << "\nENDL\n\n";
+    std::cout << "Creating a new skiplist with the copy assignment operator:\n";
+
+    skiplist<int> yskip = uskip;
+    std::cout << "Forward iterator :\n";
+    display(yskip.begin(), yskip.end());
 }
