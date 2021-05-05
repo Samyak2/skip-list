@@ -304,17 +304,18 @@ public:
     template<typename InputIterator>
     skiplist(InputIterator first, InputIterator last)
         : size_(0), last(nullptr) {
+        this->_setup_random_number_generator();
         // last and size_ are taken care of during insertion.
         while(first != last) {
             this->insert(*first);
             ++first;
             ++size_;
         }
-        this->_setup_random_number_generator();
     }
 
     skiplist(std::initializer_list<value_type> l)
         : size_(0), last(nullptr) {
+        this->_setup_random_number_generator();
         auto first = l.begin();
         auto last = l.end();
         while(first != last) {
@@ -322,7 +323,6 @@ public:
             ++first;
             ++size_;
         }
-        this->_setup_random_number_generator();
     }
 
     // At every level, go on till nullptr and delete everything in its path
@@ -483,7 +483,7 @@ void skiplist<T, X>::insert(T value) {
         last = node;
     // Add into storage
     node->valz.push_back(value);
-    
+
     // Probabilistically add more levels
     while(this->dist_(this->mt_) > 0.5) {
         node->up = new SLNode<T>(value);
@@ -623,8 +623,8 @@ typename skiplist<T, X>::iterator skiplist<T, X>::find(T value) {
 template<typename T>
 void visualize(const skiplist<T>& sl) {
     if (sl.key.empty()) {
-      std::cout << "EMPTY SKIPLIST" << std::endl;
-      return;
+        std::cout << "EMPTY SKIPLIST" << std::endl;
+        return;
     }
 
     // store mapping of node->index in a map
