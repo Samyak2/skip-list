@@ -309,7 +309,6 @@ public:
         while(first != last) {
             this->insert(*first);
             ++first;
-            ++size_;
         }
     }
 
@@ -321,7 +320,6 @@ public:
         while(first != last) {
             this->insert(*first);
             ++first;
-            ++size_;
         }
     }
 
