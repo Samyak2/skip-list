@@ -14,10 +14,20 @@ int main() {
 
     visualize_width(iskip);
 
+    // indexing
+    std::cout << "At index 0: " << iskip[0] << std::endl;
+    std::cout << "At index 1: " << iskip[1] << std::endl;
+    std::cout << "At index 5: " << iskip[5] << std::endl;
+
     for(int i=0; i<10; i++)
         iskip.insert(i);
 
     visualize<int>(iskip);
 
     visualize_width(iskip);
+
+    // indexing
+    std::cout << "At index 0: " << iskip[0] << std::endl;
+    std::cout << "At index 1: " << iskip[1] << std::endl;
+    std::cout << "At index 5: " << iskip[5] << std::endl;
 }

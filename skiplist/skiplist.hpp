@@ -171,6 +171,9 @@ public:
     friend void visualize_width<val_type>(const skiplist<val_type>&);
     int size() { return size_;}
 
+    // for indexing
+    val_type& operator[](int);
+
     // forward iterator to begin
     iterator begin() { return key.empty() ? end() : iterator(key[0]->next); }
     // forward iterator to one beyond last.
@@ -388,9 +391,6 @@ void skiplist<T, X>::insert(T value) {
         follow->width++;
         follow->valz.push_back(value);
 
-//         visualize_width(*this);
-//         std::cout << "befoooooore\n" << std::endl;
-
         int num_direct = 0;
         // increase width of all direct upper level nodes
         for (auto upper_node = follow->up;
@@ -400,9 +400,6 @@ void skiplist<T, X>::insert(T value) {
           ++num_direct;
         }
 
-//         visualize_width(*this);
-//         std::cout << "not so befoooooore\n" << std::endl;
-
         // increase width of all (prev) upper level nodes
         auto upper_node = history.rbegin();
         for (int i = 0;
@@ -411,12 +408,8 @@ void skiplist<T, X>::insert(T value) {
 
         for (; upper_node != history.rend();
              upper_node++) {
-          // std::cout << "aaaaaaaaa" << std::endl;
           (*upper_node)->width++;
         }
-
-//         visualize_width(*this);
-//         std::cout << "afterrrrrrr\n" << std::endl;
 
         return;
     }
@@ -594,6 +587,31 @@ typename skiplist<T, X>::iterator skiplist<T, X>::find(T value) {
     return iterator(follow);
 }
 
+template<typename T, typename X>
+// assume index is always valid - just like vector
+T& skiplist<T, X>::operator[](int index) {
+  SLNode<T>* follow = key.back();
+
+  // go down till index is greater than skips
+  while (follow->down) {
+    while (follow->next && follow->width <= index) {
+      // decrease remaining index
+      index -= follow->width;
+      follow = follow->next;
+    }
+    follow = follow->down;
+  }
+
+  // do the same at level 0
+  while (follow->next && follow->width <= index) {
+    // decrease remaining index
+    index -= follow->width;
+    follow = follow->next;
+  }
+
+  return follow->valz[index];
+}
+
 template<typename T>
 void visualize(const skiplist<T>& sl) {
     if (sl.key.empty()) {
@@ -711,7 +729,7 @@ void visualize_width(const skiplist<T>& sl) {
         std::cout << "-E";
         std::cout << std::endl;
 
-        std::cout << "Total width at level " << total_width << std::endl;
+        // std::cout << "Total width at level " << total_width << std::endl;
 
         level++;
     }
