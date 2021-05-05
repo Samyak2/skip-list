@@ -20,8 +20,11 @@ template<
 >
 class skiplist;
 
-template<typename T>
-void visualize(const skiplist<T>&);
+template<
+    typename val_type,
+    typename compare_t
+>
+std::ostream &operator<<(std::ostream &out, const skiplist<val_type, compare_t>&);
 
 template<typename T>
 struct SLNode {
@@ -260,7 +263,7 @@ public:
         auto it = find(value);
         return  it != end() ? it.node->count : 0;
     }
-    friend void visualize<val_type>(const skiplist<val_type>&);
+    friend std::ostream &operator<<<val_type, compare_t>(std::ostream &out, const skiplist<val_type, compare_t>& sl);
     int size() { return size_;}
 
     // forward iterator to begin
@@ -613,11 +616,10 @@ typename skiplist<T, X>::iterator skiplist<T, X>::find(T value) {
     return iterator(follow);
 }
 
-template<typename T>
-void visualize(const skiplist<T>& sl) {
+template<typename T, typename X>
+std::ostream &operator<<(std::ostream &out, const skiplist<T, X>& sl) {
     if (sl.key.empty()) {
-        std::cout << "EMPTY SKIPLIST" << std::endl;
-        return;
+        return out << "EMPTY SKIPLIST" << std::endl;
     }
 
     // store mapping of node->index in a map
@@ -634,7 +636,7 @@ void visualize(const skiplist<T>& sl) {
     auto end = sl.key.rend();
     while(level != end) {
         // S denotes start of level, could be something different
-        std::cout << "S";
+        out << "S";
 
         // to store previous element's index
         // and current element's index
@@ -648,12 +650,12 @@ void visualize(const skiplist<T>& sl) {
             // filler to align it correctly
             // when elements in between don't exist at this level
             for (int i = 1; i < next_index - index; ++i) {
-                std::cout << "----";
+                out << "----";
             }
 
             // width of printed element is hardcoded to 3 for now
             // the padding is filled with ""-"
-            std::cout << "-" << std::setfill('-') << std::setw(3) << it->val;
+            out << "-" << std::setfill('-') << std::setw(3) << it->val;
             it = it->next;
 
             index = next_index;
@@ -661,15 +663,17 @@ void visualize(const skiplist<T>& sl) {
         next_index = cur_index;
 
         for (int i = 1; i < next_index - index; ++i) {
-            std::cout << "----";
+            out << "----";
         }
 
-        std::cout << "-E";
+        out << "-E";
 
-        std::cout << std::endl;
+        out << std::endl;
 
         level++;
     }
+
+    return out;
 }
 // End of cpp file
 

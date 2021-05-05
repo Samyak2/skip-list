@@ -19,7 +19,7 @@ int main() {
         else
             iskip.insert(i+2);
     }
-    visualize(iskip);
+    std::cout << iskip;
 
     std::cout << "Forward iterator :\n";
     display(iskip.begin(), iskip.end());
