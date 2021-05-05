@@ -1,4 +1,5 @@
 #include <iostream>
+#include <set>
 #include <skiplist.hpp>
 
 class DictKey {
@@ -43,10 +44,43 @@ int main() {
 
   aDict.insert(DictKey{10, "hello"});
   aDict.insert(DictKey{20, "jello"});
+  aDict.insert(DictKey{20, "yello"});
+  aDict.insert(DictKey{40, "fello"});
 
-  foundit(aDict, DictKey{10});
-  foundit(aDict, DictKey{20});
-  foundit(aDict, DictKey{30});
+  // visualize(aDict);
+
+  // foundit(aDict, DictKey{10});
+  // foundit(aDict, DictKey{20});
+  // foundit(aDict, DictKey{30});
+  std::cout << "SKIPLIST:\n";
+  for(auto e: aDict)
+    std::cout << e << "\n";
+
+  // same operations on multiset
+  std::multiset<DictKey> lolz;
+  lolz.insert(DictKey{10, "hello"});
+  lolz.insert(DictKey{20, "jello"});
+  lolz.insert(DictKey{20, "yello"});
+  lolz.insert(DictKey{40, "fello"});
+
+  std::cout << "MULTISET:\n";
+  for(auto e: lolz)
+    std::cout << e << "\n";
+
+  // what about a find?
+  // returns the first element inserted apparently
+  std::cout << "MULTISET:\n";
+  auto it = lolz.find(DictKey{20, "yomama"});
+  std::cout << "Found: " << *it << "\n";
+  std::cout << "Next: " << *++it << "\n";
+  std::cout << "Count: " << lolz.count(DictKey{20, "yomama"}) << "\n";
+
+  // now to repeat it with our data structure
+  std::cout << "SKIPLIST:\n";
+  auto iter = aDict.find(DictKey{20, "yomama"});
+  std::cout << "Found: " << *iter << "\n";
+  std::cout << "Next: " << *++iter << "\n";
+  std::cout << "Count: " << aDict.count(DictKey{20, "yomama"}) << "\n";
 
   return 0;
 }
