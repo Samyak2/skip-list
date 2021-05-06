@@ -15,6 +15,7 @@ set(include_dirs
 
 add_executable(tester examples/tester.cpp)
 add_executable(dictionary examples/dictionary.cpp)
+add_executable(dictionary_map examples/dictionary_map.cpp)
 add_executable(visualizer examples/visualizer.cpp)
 add_executable(benchmarks examples/benchmarks.cpp)
 add_executable(iterator_test examples/iterator_test.cpp)
@@ -22,6 +23,7 @@ add_executable(doge examples/doge.cpp)
 
 target_link_libraries(tester PUBLIC skiplist)
 target_link_libraries(dictionary PUBLIC skiplist)
+target_link_libraries(dictionary_map PUBLIC skiplist)
 target_link_libraries(visualizer PUBLIC skiplist)
 target_link_libraries(benchmarks PUBLIC skiplist)
 target_link_libraries(iterator_test PUBLIC skiplist)
@@ -29,6 +31,7 @@ target_link_libraries(doge PUBLIC skiplist)
 
 target_include_directories(tester PUBLIC ${include_dirs})
 target_include_directories(dictionary PUBLIC ${include_dirs})
+target_include_directories(dictionary_map PUBLIC ${include_dirs})
 target_include_directories(visualizer PUBLIC ${include_dirs})
 target_include_directories(benchmarks PUBLIC ${include_dirs})
 target_include_directories(iterator_test PUBLIC ${include_dirs})
