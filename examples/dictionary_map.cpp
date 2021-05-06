@@ -10,7 +10,7 @@ int main() {
   aDict.insert(20, "yello");
   aDict.insert(40, "fello");
 
-  // std::cout << aDict;
+  std::cout << aDict;
 
   // foundit(aDict, DictKey{10});
   // foundit(aDict, DictKey{20});

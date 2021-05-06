@@ -266,7 +266,7 @@ public:
         auto it = find(value);
         return  it != end() ? it.node->count : 0;
     }
-    friend std::ostream &operator<<<key_type, compare_t>(std::ostream &out, const skiplist<key_type, compare_t>& sl);
+    friend std::ostream &operator<<<key_type, val_type, compare_t>(std::ostream &out, const skiplist<key_type, val_type, compare_t>& sl);
     int size() { return size_;}
 
     // forward iterator to begin
@@ -620,21 +620,27 @@ typename skiplist<T, V, X>::iterator skiplist<T, V, X>::find(T find_key) {
     return iterator(follow);
 }
 
-template<typename T, typename X>
-std::ostream &operator<<(std::ostream &out, const skiplist<T, X>& sl) {
+template<typename T, typename V, typename X>
+std::ostream &operator<<(std::ostream &out, const skiplist<T, V, X>& sl) {
     if (sl.key.empty()) {
         return out << "EMPTY SKIPLIST" << std::endl;
     }
 
+    out << "Values: ";
     // store mapping of node->index in a map
     std::map<T, int> index_store{};
     auto bottom_it = (*(sl.key.begin()))->next;
     int cur_index = 0;
     while (bottom_it) {
+        for (auto value : bottom_it->valz) {
+          out << value << ", ";
+        }
+
         index_store[bottom_it->val] = cur_index;
         cur_index++;
         bottom_it = bottom_it->next;
     }
+    out << std::endl;
 
     auto level = sl.key.rbegin();
     auto end = sl.key.rend();
