@@ -31,21 +31,20 @@ struct SLNode {
     // Poorly named - left, right, up, down pointers
     SLNode *back, *next, *up, *down;
     // Value, should be templated
-    T val;
+    const T& val;
     // Storage for multiple elements
     std::vector<T> valz;
     // Count is integer only, will only be 0 for key nodes
     int count;
-    SLNode(T val_)
+    SLNode(const T& val_)
     : back(nullptr), next(nullptr), up(nullptr), down(nullptr), val(val_), count(1) {}
     // TODO: not nice, T must have default constructor, must figure a workaround
-    SLNode()
-    : back(nullptr), next(nullptr), up(nullptr), down(nullptr), count(0) {}
-    
+
+    SLNode(const T &&) = delete;
+
     // Special copy constructor
     SLNode(SLNode other, int)
-    : back(nullptr), next(nullptr), up(nullptr), down(nullptr), valz(other.valz) {
-        val = other.val;
+    : back(nullptr), next(nullptr), up(nullptr), down(nullptr), valz(other.valz), val(other.val) {
         count = other.count;
     }
 };
@@ -186,7 +185,7 @@ public:
         for(int i=0; i<other.key.size(); i++) {
             
             trav_r = other.key[i]->next;
-            trav_l = new SLNode<val_type>();
+            trav_l = new SLNode<val_type>(trav_r->val);
             key.push_back(trav_l);
             while(trav_r) {
                 trav_l->next = new SLNode<val_type>(*trav_r, 15081947);
@@ -248,15 +247,15 @@ public:
     }
 
     // specialized functions
-    void insert(val_type value);
+    void insert(const val_type& value);
 
     // erase can be overloaded
     // this version finds the value and deletes the node if it exists
     // one more version of erase is passing an iterator object
-    void erase(val_type value);
+    void erase(const val_type& value);
     iterator erase(iterator it);
 
-    iterator find(val_type value);
+    iterator find(const val_type& value);
     // smol count function to match set interface
 
     int count(val_type value) {
@@ -405,20 +404,20 @@ public:
 // utility function to check equality, am lazy
 // https://twitter.com/acemarke/status/1072342186396667905
 template<typename T, typename op>
-bool _420_is_equal(T &a, T& b, op less_than) {
+bool _420_is_equal(const T &a, const T& b, op less_than) {
     return !less_than(a, b) && !less_than(b, a);
 }
 
 template<typename T, typename X>
 // Inserting same will put it in a store and increment count
 // Insertion always starts at level 0
-void skiplist<T, X>::insert(T value) {
+void skiplist<T, X>::insert(const T& value) {
     ++size_;
 
     // If entire container empty
     if(key.empty()) {
         SLNode<T> *node = new SLNode<T>(value);
-        SLNode<T> *keyd = new SLNode<T>();
+        SLNode<T> *keyd = new SLNode<T>(value);
         key.push_back(keyd);
         key[0]->next = node;
         node->back = key[0];
@@ -431,7 +430,7 @@ void skiplist<T, X>::insert(T value) {
             node->up->down = node;
             node = node->up;
 
-            keyd->up = new SLNode<T>();
+            keyd->up = new SLNode<T>(value);
             keyd->up->down = keyd;
             keyd = keyd->up;
 
@@ -494,7 +493,7 @@ void skiplist<T, X>::insert(T value) {
         else {
             // add directly to the key
             // mess around with the pointers
-            keyd->up = new SLNode<T>();
+            keyd->up = new SLNode<T>(value);
             keyd->up->down = keyd;
             keyd = keyd->up;
 
@@ -507,7 +506,7 @@ void skiplist<T, X>::insert(T value) {
 
 template<typename T, typename X>
 // Cannot assume element exists
-void skiplist<T, X>::erase(T value) {
+void skiplist<T, X>::erase(const T& value) {
     if(key.empty())
         return;
     // Find value
@@ -590,7 +589,7 @@ typename skiplist<T, X>::iterator skiplist<T, X>::erase(typename skiplist<T, X>:
 }
 
 template<typename T, typename X>
-typename skiplist<T, X>::iterator skiplist<T, X>::find(T value) {
+typename skiplist<T, X>::iterator skiplist<T, X>::find(const T& value) {
     // Same algorithm as erase, but without erasing anything ;)
     if(key.empty())
         return end();
