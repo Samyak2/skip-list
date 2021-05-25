@@ -46,7 +46,7 @@ Then, inlucde it like this -
 Now you have a `skiplist` container available. It has the same(almost) interface as a `multiset`.  
 Here is an example of using it with an integer:  
 ```cpp
-skiplist<int, string> notaset;
+skiplist<int> notaset;
 notaset.insert(42);
 notaset.insert(13);
 notaset.insert(420);
@@ -57,7 +57,7 @@ notaset.insert(420);
 notaset.erase(13);
 
 // finding items
-skiplist<int, string>::iterator it = notaset.find(42);
+skiplist<int>::iterator it = notaset.find(42);
 if(it != notaset.end())
     std::cout << "Could not find it\n";
 else
